@@ -9,7 +9,7 @@ This repo outlines how to install argocd using the official argocd helm chart. T
 - Prepare a argocd.yaml to use for your argocd installation
   
 ```bash
-wget -O argocd.yaml https://raw.githubusercontent.com/GlueOps/admiral/main/argocd.yaml.tpl
+wget -O argocd.yaml https://raw.githubusercontent.com/GlueOps/argocd-install-docs/main/argocd.yaml.tpl
 ```
 
 - Read the comments in the file and update the values in the argocd.yaml file.
