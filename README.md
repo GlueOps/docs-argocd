@@ -1,4 +1,4 @@
-# argocd-install-docs
+# docs-argocd
 
 This repo outlines how to install argocd using the official argocd helm chart. This is part of the opionated GlueOps Platform. If you came here directly then you should probably visit https://github.com/glueops/admiral as that is the starting point.
 
