@@ -94,3 +94,4 @@ server:
     annotations:
       ingress.pomerium.io/allow_any_authenticated_user: 'true'
       ingress.pomerium.io/pass_identity_headers: 'true'
+      ingress.pomerium.io/allow_websockets: 'true'
