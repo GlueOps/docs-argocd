@@ -35,7 +35,7 @@ variable "client_secret" {
   description = "this is the client secret for the argocd admin user. Should be identical to what is being used in the dex configuration"
 }
 
-variable "argocd_tenant_rbac_policies" {
+variable "argocd_rbac_policies" {
   type        = string
   description = "policy csv for tenants: https://argo-cd.readthedocs.io/en/stable/operator-manual/rbac/"
   default     = <<EOT
