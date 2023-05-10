@@ -56,6 +56,6 @@ output "helm_values" {
     "placeholder_cluster_environment", var.cluster_environment),
     "placeholder_argocd_oidc_client_secret_from_dex", var.client_secret),
     "placeholder_glueops_root_domain", var.glueops_root_domain),
-    "      placeholder_argocd_tenant_rbac_policies", var.argocd_tenant_rbac_policies
+    "      placeholder_argocd_rbac_policies", var.argocd_rbac_policies
   )
 }

@@ -69,8 +69,7 @@ server:
     # `development` is the project that all developers are expected to deploy under
     # @default -- `''` (See [values.yaml])
     policy.csv: |
-      g, GlueOps:argocd_super_admins, role:admin
-      placeholder_argocd_tenant_rbac_policies
+      placeholder_argocd_rbac_policies
   # @ignored
   extraArgs:
     - --insecure
