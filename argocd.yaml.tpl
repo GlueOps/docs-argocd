@@ -53,16 +53,16 @@ server:
       hs = {}
       hs.status = "Healthy"
       return hs
-    url: "https://argocd.<cluster_env>.<tenant-name-goes-here>.onglueops.rocks"
+    url: "https://argocd.${cluster_environment}.${tenant_key}.onglueops.rocks"
     # -- To create a clientID and clientSecret please reference: https://github.com/GlueOps/github-oauth-apps
     # This dex.config is to create a GitHub connector for SSO to ArgoCD.
     # @default -- `''` (See [values.yaml])
     oidc.config: |
       name: GitHub SSO
-      issuer: https://dex.<cluster_env>.<tenant-name-goes-here>.onglueops.rocks
+      issuer: https://dex.<cluster_env>.${tenant.onglueops.rocks
       clientID: argocd
       clientSecret: XXXXXXXXXXXXXXXXXXXXXXXXXX
-      redirectURI: https://argocd.<cluster_env>.<tenant-name-goes-here>.onglueops.rocks/api/dex/callback
+      redirectURI: https://argocd.${cluster_environment}.${tenant_key}.onglueops.rocks/api/dex/callback
   rbacConfig:
     # -- A good reference for this is: https://argo-cd.readthedocs.io/en/stable/operator-manual/rbac/
     # This default policy is for GlueOps orgs/teams only. Please change it to reflect your own orgs/teams.
@@ -83,7 +83,7 @@ server:
   service:
     type: ClusterIP
   ingress:
-    hosts: ["argocd.<cluster_env>.<tenant-name-goes-here>.onglueops.rocks"]
+    hosts: ["argocd.${cluster_environment}.${tenant_key}.onglueops.rocks"]
     # @ignored
     enabled: true
     # this public-authenticated leverages the authentication proxy (pomerium)
