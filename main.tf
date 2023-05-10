@@ -35,7 +35,7 @@ variable "client_secret" {
   description = "this is the client secret for the argocd admin user. Should be identical to what is being used in the dex configuration"
 }
 
-output "argocd" {
+output "argocd_helm_values" {
   value = replace(replace(replace(
     replace(
       data.local_file.argocd_template.content,
