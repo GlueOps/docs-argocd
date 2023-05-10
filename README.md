@@ -37,7 +37,7 @@ kubectl get pods -n glueops-core
 ## If you are using the terraform module, below is an example
 
 ```hcl
-module "argocd_yaml" {
+module "argocd_helm_values" {
   source              = "git::https://github.com/GlueOps/docs-argocd.git"
   tenant_key          = "antoniostacos"
   cluster_environment = "nonprod"
@@ -45,7 +45,7 @@ module "argocd_yaml" {
   glueops_root_domain = "onglueops.com"
 }
 
-output "argocd_yaml" {
+output "argocd_helm_values" {
   value = module.argocd_yaml.argocd
 }
 ```
