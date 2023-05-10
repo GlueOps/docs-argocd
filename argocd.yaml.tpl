@@ -70,12 +70,7 @@ server:
     # @default -- `''` (See [values.yaml])
     policy.csv: |
       g, GlueOps:argocd_super_admins, role:admin
-      g, glueops-rocks:developers, role:developers
-      p, role:developers, clusters, get, *, allow
-      p, role:developers, *, get, development, allow
-      p, role:developers, repositories, *, development/*, allow
-      p, role:developers, applications, *, development/*, allow
-      p, role:developers, exec, *, development/*, allow
+      placeholder_argocd_tenant_rbac_policies
   # @ignored
   extraArgs:
     - --insecure
