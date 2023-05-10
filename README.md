@@ -14,9 +14,9 @@ wget -O argocd.yaml https://raw.githubusercontent.com/GlueOps/docs-argocd/main/a
 
 - Read the comments in the file and update the values in the argocd.yaml file.
   - Quick Notes:
-    - Replace `<tenant-name-goes-here>` with your tenant/company key. Example: `antoniostacos`
-    - Replace `<cluster_env>` with your cluster_environment name. Example: `nonprod`
-    - The `clientSecret` that you specify needs to be the same one you use in the `platform.yaml` for ArgoCD. If they do not match you will not be able to login.
+    - Replace `placeholder_tenant_key` with your tenant/company key. Example: `antoniostacos`
+    - Replace `placeholder_cluster_environment` with your cluster_environment name. Example: `nonprod`
+    - The `placeholder_argocd_oidc_client_secret_from_dex` that you specify needs to be the same one you use in the `platform.yaml` for ArgoCD. If they do not match you will not be able to login.
 
 - Install ArgoCD
 
