@@ -39,14 +39,11 @@ output "argocd" {
   value = replace(replace(replace(
     replace(
       data.local_file.argocd_template.content,
-      "<tenant-name-goes-here>",
-      "${var.tenant_key}"
+      "<tenant-name-goes-here>", "${var.tenant_key}"
     ),
-    "<cluster_env>",
-    "${var.cluster_environment}"
-    ), "clientSecret: XXXXXXXXXXXXXXXXXXXXXXXXXX", "clientSecret: ${var.client_secret}"),
+    "<cluster_env>", "${var.cluster_environment}"
+    ),
+    "clientSecret: XXXXXXXXXXXXXXXXXXXXXXXXXX", "clientSecret: ${var.client_secret}"
+    ),
   "onglueops.rocks", "${var.glueops_root_domain}")
-
-
-
 }
