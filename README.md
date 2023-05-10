@@ -34,3 +34,18 @@ kubectl get pods -n glueops-core
 
 - Using the command above, ensure that the ArgoCD pods are stable and no additional pods/containers are coming online. If there is a pod that is 1/3 wait until it's 3/3 and has been running for at least a minute. This entire bootstrap can take about 5mins as we are deploying a number of services in HA mode.
 
+## If you are using the terraform module, below is an example
+
+```hcl
+module "argocd_yaml" {
+  source              = "git::https://github.com/GlueOps/docs-argocd.git"
+  tenant_key          = "antoniostacos"
+  cluster_environment = "nonprod"
+  client_secret       = "Zsbui/29YEqoGOzuI8snlqGcdaRYPSLocwLXDB5GhZY="
+  glueops_root_domain = "onglueops.com"
+}
+
+output "argocd_yaml" {
+  value = module.argocd_yaml.argocd
+}
+```
