@@ -53,29 +53,23 @@ server:
       hs = {}
       hs.status = "Healthy"
       return hs
-    url: "https://argocd.<cluster_env>.<tenant-name-goes-here>.onglueops.rocks"
+    url: "https://argocd.placeholder_cluster_environment.placeholder_tenant_key.placeholder_glueops_root_domain"
     # -- To create a clientID and clientSecret please reference: https://github.com/GlueOps/github-oauth-apps
     # This dex.config is to create a GitHub connector for SSO to ArgoCD.
     # @default -- `''` (See [values.yaml])
     oidc.config: |
       name: GitHub SSO
-      issuer: https://dex.<cluster_env>.<tenant-name-goes-here>.onglueops.rocks
+      issuer: https://dex.placeholder_cluster_environment.placeholder_tenant_key.placeholder_glueops_root_domain
       clientID: argocd
-      clientSecret: XXXXXXXXXXXXXXXXXXXXXXXXXX
-      redirectURI: https://argocd.<cluster_env>.<tenant-name-goes-here>.onglueops.rocks/api/dex/callback
+      clientSecret: placeholder_argocd_oidc_client_secret_from_dex
+      redirectURI: https://argocd.placeholder_cluster_environment.placeholder_tenant_key.placeholder_glueops_root_domain/api/dex/callback
   rbacConfig:
     # -- A good reference for this is: https://argo-cd.readthedocs.io/en/stable/operator-manual/rbac/
     # This default policy is for GlueOps orgs/teams only. Please change it to reflect your own orgs/teams.
     # `development` is the project that all developers are expected to deploy under
     # @default -- `''` (See [values.yaml])
     policy.csv: |
-      g, GlueOps:argocd_super_admins, role:admin
-      g, glueops-rocks:developers, role:developers
-      p, role:developers, clusters, get, *, allow
-      p, role:developers, *, get, development, allow
-      p, role:developers, repositories, *, development/*, allow
-      p, role:developers, applications, *, development/*, allow
-      p, role:developers, exec, *, development/*, allow
+      placeholder_argocd_rbac_policies
   # @ignored
   extraArgs:
     - --insecure
@@ -83,7 +77,7 @@ server:
   service:
     type: ClusterIP
   ingress:
-    hosts: ["argocd.<cluster_env>.<tenant-name-goes-here>.onglueops.rocks"]
+    hosts: ["argocd.placeholder_cluster_environment.placeholder_tenant_key.placeholder_glueops_root_domain"]
     # @ignored
     enabled: true
     # this public-authenticated leverages the authentication proxy (pomerium)

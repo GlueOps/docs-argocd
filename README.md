@@ -14,9 +14,9 @@ wget -O argocd.yaml https://raw.githubusercontent.com/GlueOps/docs-argocd/main/a
 
 - Read the comments in the file and update the values in the argocd.yaml file.
   - Quick Notes:
-    - Replace `<tenant-name-goes-here>` with your tenant/company key. Example: `antoniostacos`
-    - Replace `<cluster_env>` with your cluster_environment name. Example: `nonprod`
-    - The `clientSecret` that you specify needs to be the same one you use in the `platform.yaml` for ArgoCD. If they do not match you will not be able to login.
+    - Replace `placeholder_tenant_key` with your tenant/company key. Example: `antoniostacos`
+    - Replace `placeholder_cluster_environment` with your cluster_environment name. Example: `nonprod`
+    - The `placeholder_argocd_oidc_client_secret_from_dex` that you specify needs to be the same one you use in the `platform.yaml` for ArgoCD. If they do not match you will not be able to login.
 
 - Install ArgoCD
 
@@ -34,3 +34,18 @@ kubectl get pods -n glueops-core
 
 - Using the command above, ensure that the ArgoCD pods are stable and no additional pods/containers are coming online. If there is a pod that is 1/3 wait until it's 3/3 and has been running for at least a minute. This entire bootstrap can take about 5mins as we are deploying a number of services in HA mode.
 
+## If you are using the terraform module, below is an example
+
+```hcl
+module "argocd_helm_values" {
+  source              = "git::https://github.com/GlueOps/docs-argocd.git"
+  tenant_key          = "antoniostacos"
+  cluster_environment = "nonprod"
+  client_secret       = "Zsbui/29YEqoGOzuI8snlqGcdaRYPSLocwLXDB5GhZY="
+  glueops_root_domain = "onglueops.com"
+}
+
+output "argocd_helm_values" {
+  value = module.argocd_yaml.argocd
+}
+```
