@@ -18,12 +18,10 @@ repoServer:
 # @ignored
 applicationSet:
   replicaCount: 2
-server:
-  # @ignored
-  autoscaling:
-    enabled: true
-    minReplicas: 2
-  config:
+configs:
+  params:
+    server.insecure: true
+  cm:
     # @ignored
     exec.enabled: "true"
     # This helps argocd know what resources it should be manging. This way if argocd manages an operator and that operator creates a pvc, it won't try and manage the pvc.
@@ -63,7 +61,7 @@ server:
       clientID: argocd
       clientSecret: placeholder_argocd_oidc_client_secret_from_dex
       redirectURI: https://argocd.placeholder_cluster_environment.placeholder_tenant_key.placeholder_glueops_root_domain/api/dex/callback
-  rbacConfig:
+  rbac:
     # -- A good reference for this is: https://argo-cd.readthedocs.io/en/stable/operator-manual/rbac/
     # This default policy is for GlueOps orgs/teams only. Please change it to reflect your own orgs/teams.
     # `development` is the project that all developers are expected to deploy under
@@ -71,8 +69,11 @@ server:
     policy.csv: |
       placeholder_argocd_rbac_policies
   # @ignored
-  extraArgs:
-    - --insecure
+server:
+  # @ignored
+  autoscaling:
+    enabled: true
+    minReplicas: 2
   # @ignored
   service:
     type: ClusterIP
