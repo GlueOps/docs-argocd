@@ -10,6 +10,8 @@ redis-ha:
 # @ignored
 controller:
   replicas: 1
+  extraArgs:
+    - --application-namespaces=*
 # @ignored
 repoServer:
   autoscaling:
@@ -70,6 +72,9 @@ configs:
       placeholder_argocd_rbac_policies
   # @ignored
 server:
+  # @ignored
+  extraArgs:
+    - --application-namespaces=*
   # @ignored
   autoscaling:
     enabled: true
