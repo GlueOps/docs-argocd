@@ -1,12 +1,29 @@
 crds:
   install: false
 
+# @ignored
+global:
+  nodeSelector:
+    glueops.dev/role: "glueops-platform"
+  tolerations:
+    - key: "glueops.dev/role"
+      operator: "Equal"
+      value: "glueops-platform"
+      effect: "NoSchedule"
+
 # many of these ignored values can be found in the argo-cd helm chart docs: https://artifacthub.io/packages/helm/argo/argo-cd
 # @ignored
 dex:
   enabled: false
 redis-ha:
   enabled: true
+  nodeSelector:
+    glueops.dev/role: "glueops-platform"
+  tolerations:
+    - key: "glueops.dev/role"
+      operator: "Equal"
+      value: "glueops-platform"
+      effect: "NoSchedule"
 # @ignored
 controller:
   replicas: 1
@@ -95,3 +112,4 @@ server:
       ingress.pomerium.io/allow_any_authenticated_user: 'true'
       ingress.pomerium.io/pass_identity_headers: 'true'
       ingress.pomerium.io/allow_websockets: 'true'
+      ingress.pomerium.io/idle_timeout: 0s
