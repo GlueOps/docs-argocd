@@ -42,6 +42,7 @@ configs:
     server.insecure: true
   cm:
     # @ignored
+    timeout.reconciliation: 10s
     exec.enabled: "true"
     # This helps argocd know what resources it should be manging. This way if argocd manages an operator and that operator creates a pvc, it won't try and manage the pvc.
     # https://argo-cd.readthedocs.io/en/stable/user-guide/resource_tracking/#choosing-a-tracking-method
