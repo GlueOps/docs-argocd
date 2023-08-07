@@ -46,14 +46,22 @@ variable "argocd_rbac_policies" {
 EOT
 }
 
+variable "argocd_app_version"
+{
+  type        = string
+  description = "This is the appVersion of argocd. Example: v2.7.11"
+}
+
+
 output "helm_values" {
-  value = replace(replace(replace(replace(
+  value = replace(replace(replace(replace(replace(
     replace(
       data.local_file.argocd_template.content,
     "placeholder_tenant_key", var.tenant_key),
     "placeholder_cluster_environment", var.cluster_environment),
     "placeholder_argocd_oidc_client_secret_from_dex", var.client_secret),
     "placeholder_glueops_root_domain", var.glueops_root_domain),
-    "      placeholder_argocd_rbac_policies", var.argocd_rbac_policies
+    "      placeholder_argocd_rbac_policies", var.argocd_rbac_policies),
+    "placeholder_argocd_app_version", var.argocd_app_version
   )
 }

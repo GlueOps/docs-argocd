@@ -3,6 +3,8 @@ crds:
 
 # @ignored
 global:
+  image:
+    tag: "placeholder_argocd_app_version"
   nodeSelector:
     glueops.dev/role: "glueops-platform"
   tolerations:
