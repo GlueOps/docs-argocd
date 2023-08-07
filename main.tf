@@ -46,8 +46,7 @@ variable "argocd_rbac_policies" {
 EOT
 }
 
-variable "argocd_app_version"
-{
+variable "argocd_app_version" {
   type        = string
   description = "This is the appVersion of argocd. Example: v2.7.11"
 }
