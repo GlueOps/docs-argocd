@@ -67,6 +67,22 @@ configs:
         end
       end
       return hs
+    # enables health check assessment for lokialertrulegroup. it'll be in a progressing state if it doesn't get created. we may want to add more health checks in the future for error states
+    # @ignored
+    resource.customizations.health.metacontroller.glueops.dev_LokiAlertRuleGroup:
+      hs = {}
+      hs.status = "Progressing"
+      hs.message = ""
+      if obj.status ~= nil then
+        if obj.status.health ~= nil then
+          hs.status = obj.status.health.status
+          if hs.status ~= "Healthy" then
+            hs.status = "Degraded"
+            hs.message = "Status is not Healthy"
+          end
+        end
+      end
+      return hs
     # This is a bit of a hack but allows the external-secret to never error out and always appear healthy to argocd. We probably want to remove this.
     # @ignored
     resource.customizations.health.external-secrets.io_ExternalSecret: |
