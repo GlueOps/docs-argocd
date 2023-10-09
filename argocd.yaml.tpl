@@ -83,6 +83,38 @@ configs:
         end
       end
       return hs
+    # @ignored
+    resource.customizations.health.metacontroller.glueops.dev_WebApplicationFirewall:
+      hs = {}
+      if obj.status then
+          if obj.status.HEALTHY == "True" then
+              hs.status = "Healthy"
+              hs.message = "WebApplicationFirewall is healthy"
+          else
+              hs.status = "Degraded"
+              hs.message = "WebApplicationFirewall is not healthy"
+          end
+      else
+          hs.status = "Progressing"
+          hs.message = "WebApplicationFirewall is initializing"
+      end
+      return hs
+    # @ignored
+    resource.customizations.health.metacontroller.glueops.dev_WebApplicationFirewallWebACL:
+      hs = {}
+      if obj.status then
+          if obj.status.HEALTHY == "True" then
+              hs.status = "Healthy"
+              hs.message = "WebApplicationFirewallWebACL is healthy"
+          else
+              hs.status = "Degraded"
+              hs.message = "WebApplicationFirewallWebACL is not healthy"
+          end
+      else
+          hs.status = "Progressing"
+          hs.message = "WebApplicationFirewallWebACL is initializing"
+      end
+      return hs
     # This is a bit of a hack but allows the external-secret to never error out and always appear healthy to argocd. We probably want to remove this.
     # @ignored
     resource.customizations.health.external-secrets.io_ExternalSecret: |
