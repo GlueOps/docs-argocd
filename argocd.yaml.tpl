@@ -2,13 +2,6 @@ crds:
   install: false
 
 # @ignored
-notifications:
-  metrics:
-    enabled: true
-    serviceMonitor:
-      enabled: true
-
-# @ignored
 global:
   image:
     tag: "placeholder_argocd_app_version"
@@ -25,11 +18,6 @@ global:
 dex:
   enabled: false
 redis-ha:
-  haproxy:
-    metrics:
-      enabled: true
-      serviceMonitor:
-        enabled: true
   enabled: true
   nodeSelector:
     glueops.dev/role: "glueops-platform"
@@ -40,28 +28,16 @@ redis-ha:
       effect: "NoSchedule"
 # @ignored
 controller:
-  metrics:
-    enabled: true
-    serviceMonitor:
-      enabled: true
   replicas: 1
   extraArgs:
     - --application-namespaces=*
 # @ignored
 repoServer:
-  metrics:
-    enabled: true
-    serviceMonitor:
-      enabled: true
   autoscaling:
     enabled: true
     minReplicas: 2
 # @ignored
 applicationSet:
-  metrics:
-    enabled: true
-    serviceMonitor:
-      enabled: true
   replicaCount: 2
 configs:
   params:
@@ -164,11 +140,6 @@ configs:
       placeholder_argocd_rbac_policies
   # @ignored
 server:
-  # @ignored
-  metrics:
-    enabled: true
-    serviceMonitor:
-      enabled: true
   # @ignored
   extraArgs:
     - --application-namespaces=*
