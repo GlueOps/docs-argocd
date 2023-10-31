@@ -38,7 +38,7 @@ repoServer:
     minReplicas: 2
 # @ignored
 applicationSet:
-  replicaCount: 2
+  replicas: 2
 configs:
   params:
     server.insecure: true
