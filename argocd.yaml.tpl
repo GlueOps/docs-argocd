@@ -129,12 +129,6 @@ configs:
           hs.message = "WebApplicationFirewallWebACL is initializing"
       end
       return hs
-    # This is a bit of a hack but allows the external-secret to never error out and always appear healthy to argocd. We probably want to remove this.
-    # @ignored
-    resource.customizations.health.external-secrets.io_ExternalSecret: |
-      hs = {}
-      hs.status = "Healthy"
-      return hs
     url: "https://argocd.placeholder_cluster_environment.placeholder_tenant_key.placeholder_glueops_root_domain"
     # -- To create a clientID and clientSecret please reference: https://github.com/GlueOps/github-oauth-apps
     # This dex.config is to create a GitHub connector for SSO to ArgoCD.
