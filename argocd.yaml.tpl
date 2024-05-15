@@ -36,6 +36,7 @@ redis-ha:
       effect: "NoSchedule"
 # @ignored
 controller:
+  priorityClassName: "system-cluster-critical"
   metrics:
     enabled: true
   replicas: 1
@@ -49,6 +50,26 @@ repoServer:
     enabled: true
     minReplicas: 6
     maxReplicas: 8
+  pdb:
+    enabled: true
+    minAvailable: 2
+  affinity:
+    podAntiAffinity:
+      preferredDuringSchedulingIgnoredDuringExecution:
+      - weight: 100
+        podAffinityTerm:
+          labelSelector:
+            matchLabels:
+              app.kubernetes.io/name: argocd-repo-server
+          topologyKey: kubernetes.io/hostname
+      requiredDuringSchedulingIgnoredDuringExecution:
+      - labelSelector:
+          matchExpressions:
+          - key: app.kubernetes.io/name
+            operator: In
+            values:
+            - argocd-application-controller
+        topologyKey: kubernetes.io/hostname
 # @ignored
 applicationSet:
   metrics:
