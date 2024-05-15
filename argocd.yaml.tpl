@@ -47,7 +47,8 @@ repoServer:
     enabled: true
   autoscaling:
     enabled: true
-    minReplicas: 2
+    minReplicas: 6
+    maxReplicas: 8
 # @ignored
 applicationSet:
   metrics:
