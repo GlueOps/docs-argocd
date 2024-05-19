@@ -17,6 +17,8 @@ global:
       operator: "Equal"
       value: "glueops-platform"
       effect: "NoSchedule"
+  logging:
+    format: json
 
 # many of these ignored values can be found in the argo-cd helm chart docs: https://artifacthub.io/packages/helm/argo/argo-cd
 # @ignored
