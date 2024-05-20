@@ -5,18 +5,27 @@ crds:
 notifications:
   metrics:
     enabled: true
+  affinity:
+    nodeAffinity:
+      requiredDuringSchedulingIgnoredDuringExecution:
+        nodeSelectorTerms:
+        - matchExpressions:
+          - key: "glueops.dev/role"
+            operator: In
+            values:
+            - "glueops-platform"
 
 # @ignored
 global:
   image:
     tag: "placeholder_argocd_app_version"
-  nodeSelector:
-    glueops.dev/role: "glueops-platform"
   tolerations:
     - key: "glueops.dev/role"
       operator: "Equal"
       value: "glueops-platform"
       effect: "NoSchedule"
+  logging:
+    format: json
 
 # many of these ignored values can be found in the argo-cd helm chart docs: https://artifacthub.io/packages/helm/argo/argo-cd
 # @ignored
@@ -26,16 +35,65 @@ redis-ha:
   haproxy:
     metrics:
       enabled: true
+    tolerations:
+      - key: "glueops.dev/role"
+        operator: "Equal"
+        value: "glueops-platform"
+        effect: "NoSchedule"
+    additionalAffinities:
+      nodeAffinity:
+        requiredDuringSchedulingIgnoredDuringExecution:
+          nodeSelectorTerms:
+          - matchExpressions:
+            - key: "glueops.dev/role"
+              operator: In
+              values:
+              - "glueops-platform"
   enabled: true
-  nodeSelector:
-    glueops.dev/role: "glueops-platform"
   tolerations:
     - key: "glueops.dev/role"
       operator: "Equal"
       value: "glueops-platform"
       effect: "NoSchedule"
+  additionalAffinities:
+    nodeAffinity:
+      requiredDuringSchedulingIgnoredDuringExecution:
+        nodeSelectorTerms:
+        - matchExpressions:
+          - key: "glueops.dev/role"
+            operator: In
+            values:
+            - "glueops-platform"
 # @ignored
 controller:
+  # @ignored
+  affinity:
+    nodeAffinity:
+      requiredDuringSchedulingIgnoredDuringExecution:
+        nodeSelectorTerms:
+        - matchExpressions:
+          - key: "glueops.dev/role"
+            operator: In
+            values:
+            - "glueops-platform-argocd-app-controller"
+            - "glueops-platform"
+      preferredDuringSchedulingIgnoredDuringExecution:
+      - weight: 100
+        preference:
+          matchExpressions:
+          - key: "glueops.dev/role"
+            operator: In
+            values:
+            - "glueops-platform-argocd-app-controller"
+  tolerations:
+    - key: "glueops.dev/role"
+      operator: "Equal"
+      value: "glueops-platform-argocd-app-controller"
+      effect: "NoSchedule"
+    - key: "glueops.dev/role"
+      operator: "Equal"
+      value: "glueops-platform"
+      effect: "NoSchedule"
   priorityClassName: "system-cluster-critical"
   metrics:
     enabled: true
@@ -70,11 +128,28 @@ repoServer:
             values:
             - argocd-application-controller
         topologyKey: kubernetes.io/hostname
+    nodeAffinity:
+      requiredDuringSchedulingIgnoredDuringExecution:
+        nodeSelectorTerms:
+        - matchExpressions:
+          - key: "glueops.dev/role"
+            operator: In
+            values:
+            - "glueops-platform"
 # @ignored
 applicationSet:
   metrics:
     enabled: true
   replicas: 2
+  affinity:
+    nodeAffinity:
+      requiredDuringSchedulingIgnoredDuringExecution:
+        nodeSelectorTerms:
+        - matchExpressions:
+          - key: "glueops.dev/role"
+            operator: In
+            values:
+            - "glueops-platform"
 configs:
   params:
     server.insecure: true
@@ -170,6 +245,16 @@ configs:
       placeholder_argocd_rbac_policies
   # @ignored
 server:
+  # @ignored
+  affinity:
+    nodeAffinity:
+      requiredDuringSchedulingIgnoredDuringExecution:
+        nodeSelectorTerms:
+        - matchExpressions:
+          - key: "glueops.dev/role"
+            operator: In
+            values:
+            - "glueops-platform"
   # @ignored
   metrics:
     enabled: true
