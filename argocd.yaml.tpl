@@ -94,7 +94,6 @@ controller:
       operator: "Equal"
       value: "glueops-platform"
       effect: "NoSchedule"
-  priorityClassName: "system-cluster-critical"
   metrics:
     enabled: true
   replicas: 1
