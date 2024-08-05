@@ -17,6 +17,7 @@ notifications:
 
 # @ignored
 global:
+  domain: ["argocd.placeholder_cluster_environment.placeholder_tenant_key.placeholder_glueops_root_domain"]
   image:
     tag: "placeholder_argocd_app_version"
   tolerations:
@@ -268,7 +269,6 @@ server:
   service:
     type: ClusterIP
   ingress:
-    hosts: ["argocd.placeholder_cluster_environment.placeholder_tenant_key.placeholder_glueops_root_domain"]
     # @ignored
     enabled: true
     # this public-authenticated leverages the authentication proxy (pomerium)
