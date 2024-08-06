@@ -17,7 +17,7 @@ notifications:
 
 # @ignored
 global:
-  domain: ["argocd.placeholder_cluster_environment.placeholder_tenant_key.placeholder_glueops_root_domain"]
+  domain: "argocd.placeholder_cluster_environment.placeholder_tenant_key.placeholder_glueops_root_domain"
   image:
     tag: "placeholder_argocd_app_version"
   tolerations:
