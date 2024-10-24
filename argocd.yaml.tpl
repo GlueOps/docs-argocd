@@ -195,37 +195,6 @@ configs:
       end
       return hs
     # @ignored
-    resource.customizations.health.metacontroller.glueops.dev_WebApplicationFirewall:
-      hs = {}
-      if obj.status then
-          if obj.status.HEALTHY == "True" then
-              hs.status = "Healthy"
-              hs.message = "WebApplicationFirewall is healthy"
-          else
-              hs.status = "Degraded"
-              hs.message = "WebApplicationFirewall is not healthy"
-          end
-      else
-          hs.status = "Progressing"
-          hs.message = "WebApplicationFirewall is initializing"
-      end
-      return hs
-    # @ignored
-    resource.customizations.health.metacontroller.glueops.dev_WebApplicationFirewallWebACL:
-      hs = {}
-      if obj.status then
-          if obj.status.HEALTHY == "True" then
-              hs.status = "Healthy"
-              hs.message = "WebApplicationFirewallWebACL is healthy"
-          else
-              hs.status = "Degraded"
-              hs.message = "WebApplicationFirewallWebACL is not healthy"
-          end
-      else
-          hs.status = "Progressing"
-          hs.message = "WebApplicationFirewallWebACL is initializing"
-      end
-      return hs
     url: "https://argocd.placeholder_cluster_environment.placeholder_tenant_key.placeholder_glueops_root_domain"
     # -- To create a clientID and clientSecret please reference: https://github.com/GlueOps/github-oauth-apps
     # This dex.config is to create a GitHub connector for SSO to ArgoCD.
