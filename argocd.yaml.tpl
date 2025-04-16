@@ -246,7 +246,7 @@ server:
     # standard annotations for pomerium: https://www.pomerium.com/docs/deploying/k8s/ingress
     # @ignored
     annotations:
-      ingress.pomerium.io/allow_any_authenticated_user: 'true'
-      ingress.pomerium.io/pass_identity_headers: 'true'
-      ingress.pomerium.io/allow_websockets: 'true'
-      ingress.pomerium.io/idle_timeout: 0s
+      nginx.ingress.kubernetes.io/auth-signin: "https://oauth2.placeholder_cluster_environment.placeholder_tenant_key.placeholder_glueops_root_domain/oauth2/start?rd=https://$host"
+      nginx.ingress.kubernetes.io/auth-url: "https://oauth2.placeholder_cluster_environment.placeholder_tenant_key.placeholder_glueops_root_domain/oauth2/auth"
+      nginx.ingress.kubernetes.io/auth-response-headers: "x-auth-request-user, x-auth-request-email, authorization"
+    
