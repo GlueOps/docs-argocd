@@ -242,7 +242,7 @@ server:
     enabled: true
     # this public-authenticated leverages the authentication proxy (pomerium)
     # @ignored
-    ingressClassName: public-authenticated
+    ingressClassName: glueops-platform
     # standard annotations for pomerium: https://www.pomerium.com/docs/deploying/k8s/ingress
     # @ignored
     annotations:
