@@ -33,7 +33,7 @@ global:
 # @ignored
 dex:
   image:
-    repository: replicas.mirror.gpkg.io/proxy-ghcr-io/dexidp/dex
+    repository: "replicas.mirror.gpkg.io/proxy-ghcr-io/dexidp/dex"
   enabled: false
 redis:
   exporter:
