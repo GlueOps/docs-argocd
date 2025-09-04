@@ -19,6 +19,7 @@ notifications:
 global:
   domain: "argocd.placeholder_cluster_environment.placeholder_tenant_key.placeholder_glueops_root_domain"
   image:
+    repository: "replicas.mirror.gpkg.io/proxy-quay-io/argoproj/argocd"
     tag: "placeholder_argocd_app_version"
   tolerations:
     - key: "glueops.dev/role"
@@ -31,9 +32,19 @@ global:
 # many of these ignored values can be found in the argo-cd helm chart docs: https://artifacthub.io/packages/helm/argo/argo-cd
 # @ignored
 dex:
+  image:
+    repository: replicas.mirror.gpkg.io/proxy-ghcr-io/dexidp/dex
   enabled: false
+redis:
+  exporter:
+    image:
+      repository: "replicas.mirror.gpkg.io/proxy-ghcr-io/oliver006/redis_exporter"
 redis-ha:
+  image:
+    repository: "replicas.mirror.gpkg.io/proxy-public-ecr-aws/docker/library/redis"
   haproxy:
+    image:
+      repository: "replicas.mirror.gpkg.io/proxy-public-ecr-aws/docker/library/haproxy"
     metrics:
       enabled: true
     tolerations:
