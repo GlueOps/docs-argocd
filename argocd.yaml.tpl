@@ -176,6 +176,32 @@ configs:
     # https://github.com/argoproj/argo-cd/issues/3781
     # enables health check assessment for argocd applications as we are using sync-waves
     # @ignored
+
+    resource.customizations.health.Service: |
+      hs = {}
+
+      if obj.spec.externalIPs ~= nil and #obj.spec.externalIPs > 0 then
+        hs.status = "Healthy"
+        hs.message = "Service is exposed via externalIPs"
+        return hs
+      end
+
+      if obj.spec.type == "LoadBalancer" then
+        if obj.status.loadBalancer ~= nil and obj.status.loadBalancer.ingress ~= nil and #obj.status.loadBalancer.ingress > 0 then
+          hs.status = "Healthy"
+          hs.message = "LoadBalancer has been provisioned"
+        else
+          -- If no ingress IP, the LoadBalancer is still being created.
+          hs.status = "Progressing"
+          hs.message = "Waiting for LoadBalancer to be provisioned"
+        end
+      else
+        hs.status = "Healthy"
+        hs.message = "Service is ready"
+      end
+
+      return hs
+
     resource.customizations.health.argoproj.io_Application: |
       hs = {}
       hs.status = "Progressing"
