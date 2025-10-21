@@ -180,7 +180,7 @@ configs:
     resource.customizations.health.Service: |
       hs = {}
 
-      if obj.spec.externalIPs ~= nil and #obj.spec.externalIPs > 0 then
+      if obj.spec and obj.spec.externalIPs and #obj.spec.externalIPs > 0 then
         hs.status = "Healthy"
         hs.message = "Service is exposed via externalIPs"
         return hs
