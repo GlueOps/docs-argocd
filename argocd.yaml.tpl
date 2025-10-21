@@ -187,7 +187,7 @@ configs:
       end
 
       if obj.spec.type == "LoadBalancer" then
-        if obj.status.loadBalancer ~= nil and obj.status.loadBalancer.ingress ~= nil and #obj.status.loadBalancer.ingress > 0 then
+        if obj.status ~= nil and obj.status.loadBalancer ~= nil and obj.status.loadBalancer.ingress ~= nil and #obj.status.loadBalancer.ingress > 0 then
           hs.status = "Healthy"
           hs.message = "LoadBalancer has been provisioned"
         else
