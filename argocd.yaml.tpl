@@ -19,7 +19,7 @@ notifications:
 global:
   domain: "argocd.placeholder_cluster_environment.placeholder_tenant_key.placeholder_glueops_root_domain"
   image:
-    repository: "replicas.mirror.gpkg.io/proxy-quay-io/argoproj/argocd"
+    repository: "quay.repo.gpkg.io/argoproj/argocd"
     tag: "placeholder_argocd_app_version"
   tolerations:
     - key: "glueops.dev/role"
@@ -33,18 +33,18 @@ global:
 # @ignored
 dex:
   image:
-    repository: "replicas.mirror.gpkg.io/proxy-ghcr-io/dexidp/dex"
+    repository: "ghcr.repo.gpkg.io/dexidp/dex"
   enabled: false
 redis:
   exporter:
     image:
-      repository: "replicas.mirror.gpkg.io/proxy-ghcr-io/oliver006/redis_exporter"
+      repository: "ghcr.repo.gpkg.io/oliver006/redis_exporter"
 redis-ha:
   image:
-    repository: "replicas.mirror.gpkg.io/proxy-public-ecr-aws/docker/library/redis"
+    repository: "ecr.repo.gpkg.io/docker/library/redis"
   haproxy:
     image:
-      repository: "replicas.mirror.gpkg.io/proxy-public-ecr-aws/docker/library/haproxy"
+      repository: "ecr.repo.gpkg.io/docker/library/haproxy"
     metrics:
       enabled: true
     tolerations:
