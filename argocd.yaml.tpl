@@ -268,5 +268,3 @@ server:
     
     hosts:
       - argocd.placeholder_cluster_environment.placeholder_tenant_key.placeholder_glueops_root_domain
-     
-
