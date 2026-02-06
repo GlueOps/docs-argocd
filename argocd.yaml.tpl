@@ -251,7 +251,7 @@ server:
   ingress:
     # @ignored
     enabled: true
-    # this public-authenticated leverages the authentication proxy (pomerium)
+    # this public-authenticated leverages the authentication proxy (oauth2-proxy)
     # @ignored
     ingressClassName: platform-traefik
     # standard annotations for pomerium: https://www.pomerium.com/docs/deploying/k8s/ingress
