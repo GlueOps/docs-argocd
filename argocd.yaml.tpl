@@ -262,15 +262,11 @@ server:
       traefik.ingress.kubernetes.io/router.entrypoints: websecure
       traefik.ingress.kubernetes.io/router.tls: "true"
       
-      #nginx.ingress.kubernetes.io/auth-signin: "https://oauth2.{{ .Values.captain_domain }}/oauth2/start?rd=https://$host$request_uri"
-      #nginx.ingress.kubernetes.io/auth-url: "https://oauth2.{{ .Values.captain_domain }}/oauth2/auth"
+      #nginx.ingress.kubernetes.io/auth-signin: "https://oauth2.placeholder_cluster_environment.placeholder_tenant_key.placeholder_glueops_root_domain/oauth2/start?rd=https://$host$request_uri"
+      #nginx.ingress.kubernetes.io/auth-url: "https://oauth2.placeholder_cluster_environment.placeholder_tenant_key.placeholder_glueops_root_domain/oauth2/auth"
       #nginx.ingress.kubernetes.io/auth-response-headers: "x-auth-request-user, x-auth-request-email, authorization"
     
     hosts:
-      - argocd.{{ .Values.captain_domain }}
-    tls:
-      - secretName: {{ .Values.certManager.name_of_default_certificate }}
-        hosts:
-          - argocd.{{ .Values.captain_domain }}
+      - argocd.placeholder_cluster_environment.placeholder_tenant_key.placeholder_glueops_root_domain
      
 
