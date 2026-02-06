@@ -251,13 +251,20 @@ server:
   ingress:
     # @ignored
     enabled: true
-    # this public-authenticated leverages the authentication proxy (pomerium)
+    # this public-authenticated leverages the authentication proxy (oauth2-proxy)
     # @ignored
-    ingressClassName: glueops-platform
+    ingressClassName: platform-traefik
     # standard annotations for pomerium: https://www.pomerium.com/docs/deploying/k8s/ingress
     # @ignored
     annotations:
-      nginx.ingress.kubernetes.io/auth-signin: "https://oauth2.placeholder_cluster_environment.placeholder_tenant_key.placeholder_glueops_root_domain/oauth2/start?rd=https://$host$request_uri"
-      nginx.ingress.kubernetes.io/auth-url: "https://oauth2.placeholder_cluster_environment.placeholder_tenant_key.placeholder_glueops_root_domain/oauth2/auth"
-      nginx.ingress.kubernetes.io/auth-response-headers: "x-auth-request-user, x-auth-request-email, authorization"
+      cert-manager.io/cluster-issuer: letsencrypt
+      traefik.ingress.kubernetes.io/router.middlewares: glueops-core-oauth2-proxy-oauth2@kubernetescrd
+      traefik.ingress.kubernetes.io/router.entrypoints: websecure
+      traefik.ingress.kubernetes.io/router.tls: "true"
+      
+      #nginx.ingress.kubernetes.io/auth-signin: "https://oauth2.placeholder_cluster_environment.placeholder_tenant_key.placeholder_glueops_root_domain/oauth2/start?rd=https://$host$request_uri"
+      #nginx.ingress.kubernetes.io/auth-url: "https://oauth2.placeholder_cluster_environment.placeholder_tenant_key.placeholder_glueops_root_domain/oauth2/auth"
+      #nginx.ingress.kubernetes.io/auth-response-headers: "x-auth-request-user, x-auth-request-email, authorization"
     
+    hosts:
+      - argocd.placeholder_cluster_environment.placeholder_tenant_key.placeholder_glueops_root_domain
