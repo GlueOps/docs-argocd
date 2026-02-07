@@ -281,6 +281,7 @@ extraObjects:
         traefik.ingress.kubernetes.io/router.entrypoints: websecure
         traefik.ingress.kubernetes.io/router.middlewares: glueops-core-oauth2-proxy-oauth2-no-redirect@kubernetescrd
         traefik.ingress.kubernetes.io/router.priority: "20"
+        traefik.ingress.kubernetes.io/router.tls: "true"
     spec:
       ingressClassName: platform-traefik
       rules:
