@@ -257,10 +257,10 @@ server:
     # standard annotations for pomerium: https://www.pomerium.com/docs/deploying/k8s/ingress
     # @ignored
     annotations:
-      cert-manager.io/cluster-issuer: letsencrypt
-      traefik.ingress.kubernetes.io/router.middlewares: glueops-core-oauth2-proxy-oauth2-no-redirect@kubernetescrd
+      traefik.ingress.kubernetes.io/router.middlewares: glueops-core-oauth2-proxy-oauth2-with-redirect@kubernetescrd
       traefik.ingress.kubernetes.io/router.entrypoints: websecure
       traefik.ingress.kubernetes.io/router.tls: "true"
+      traefik.ingress.kubernetes.io/router.priority: "10"
       
       #nginx.ingress.kubernetes.io/auth-signin: "https://oauth2.placeholder_cluster_environment.placeholder_tenant_key.placeholder_glueops_root_domain/oauth2/start?rd=https://$host$request_uri"
       #nginx.ingress.kubernetes.io/auth-url: "https://oauth2.placeholder_cluster_environment.placeholder_tenant_key.placeholder_glueops_root_domain/oauth2/auth"
@@ -268,3 +268,30 @@ server:
     
     hosts:
       - argocd.placeholder_cluster_environment.placeholder_tenant_key.placeholder_glueops_root_domain
+    paths:
+          - /
+
+
+extraObjects:
+  - apiVersion: networking.k8s.io/v1
+    kind: Ingress
+    metadata:
+      name: argocd-server-api
+      namespace: glueops-core
+      annotations:
+        traefik.ingress.kubernetes.io/router.entrypoints: websecure
+        traefik.ingress.kubernetes.io/router.middlewares: glueops-core-oauth2-proxy-oauth2-no-redirect@kubernetescrd
+        traefik.ingress.kubernetes.io/router.priority: "20"
+    spec:
+      ingressClassName: platform-traefik
+      rules:
+        - host: argocd.placeholder_cluster_environment.placeholder_tenant_key.placeholder_glueops_root_domain
+          http:
+            paths:
+              - path: /api
+                pathType: Prefix
+                backend:
+                  service:
+                    name: argocd-server
+                    port:
+                      number: 80
