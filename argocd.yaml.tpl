@@ -277,7 +277,6 @@ extraObjects:
     kind: Ingress
     metadata:
       name: argocd-server-api
-      namespace: glueops-core
       annotations:
         traefik.ingress.kubernetes.io/router.entrypoints: websecure
         traefik.ingress.kubernetes.io/router.middlewares: glueops-core-oauth2-proxy-oauth2-no-redirect@kubernetescrd
