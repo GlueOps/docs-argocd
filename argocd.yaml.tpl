@@ -296,3 +296,228 @@ extraObjects:
                     name: argocd-server
                     port:
                       number: 80
+
+  - apiVersion: apiextensions.k8s.io/v1
+    kind: CustomResourceDefinition
+    metadata:
+      name: gates.platform.glueops.dev
+    spec:
+      group: platform.glueops.dev
+      scope: Namespaced
+      names:
+        plural: gates
+        singular: gate
+        kind: Gate
+        shortNames: ["gate"]
+      versions:
+        - name: v1alpha1
+          served: true
+          storage: true
+          subresources:
+            status: {}
+          schema:
+            openAPIV3Schema:
+              type: object
+              required: ["spec"]
+              properties:
+                spec:
+                  type: object
+                  required: ["checks"]
+                  properties:
+                    strict:
+                      type: boolean
+                      default: true
+                      description: "If true, the gate will be marked failed if any checks reference disallowed resource kinds or targets. If false, such checks will be ignored but the gate can still pass if all other checks pass."
+                    checks:
+                      type: array
+                      minItems: 1
+                      items:
+                        type: object
+                        required: ["id"]
+                        properties:
+                          id:
+                            type: string
+                            minLength: 1
+                            maxLength: 63
+                          namespace:
+                            type: string
+                            minLength: 1
+                            maxLength: 63
+                          deploymentAvailable:
+                            type: object
+                            required: ["name"]
+                            properties:
+                              name: { type: string, minLength: 1 }
+                              minAvailableReplicas: { type: integer, minimum: 0, default: 1 }
+                          statefulSetReady:
+                            type: object
+                            required: ["name"]
+                            properties:
+                              name: { type: string, minLength: 1 }
+                              minReadyReplicas: { type: integer, minimum: 0, default: 1 }
+                              requireUpdatedRevision: { type: boolean, default: true }
+                          jobComplete:
+                            type: object
+                            required: ["name"]
+                            properties:
+                              name: { type: string, minLength: 1 }
+                          serviceReadyEndpoints:
+                            type: object
+                            required: ["name"]
+                            properties:
+                              name: { type: string, minLength: 1 }
+                              minReadyAddresses: { type: integer, minimum: 0, default: 1 }
+                          podLabelReady:
+                            type: object
+                            required: ["selector"]
+                            properties:
+                              selector: { type: string, minLength: 1 }
+                              minReadyPods: { type: integer, minimum: 0, default: 1 }
+                          argoApplicationHealthy:
+                            type: object
+                            required: ["name"]
+                            properties:
+                              name: { type: string, minLength: 1 }
+                              requireSynced: { type: boolean, default: true }
+                              requireHealthy: { type: boolean, default: true }
+                status:
+                  type: object
+                  properties:
+                    observedGeneration: { type: integer }
+                    ready: { type: boolean }
+                    lastEvaluatedTime: { type: string, format: date-time }
+                    results:
+                      type: array
+                      items:
+                        type: object
+                        required: ["id", "ready"]
+                        properties:
+                          id: { type: string }
+                          ready: { type: boolean }
+                          message: { type: string }
+
+  - apiVersion: v1
+    kind: Namespace
+    metadata:
+      name: glueops-core-gatekeeper
+      labels:
+        gatekeeper.platform.glueops.dev/mode: platform
+
+  - apiVersion: v1
+    kind: ServiceAccount
+    metadata:
+      name: glueops-core-gatekeeper
+      namespace: glueops-core-gatekeeper
+
+  - apiVersion: rbac.authorization.k8s.io/v1
+    kind: ClusterRole
+    metadata:
+      name: glueops-core-gatekeeper
+    rules:
+      - apiGroups: ["platform.glueops.dev"]
+        resources: ["gates"]
+        verbs: ["get"]
+      - apiGroups: ["platform.glueops.dev"]
+        resources: ["gates/status"]
+        verbs: ["patch", "update"]
+      - apiGroups: ["authentication.k8s.io"]
+        resources: ["tokenreviews"]
+        verbs: ["create"]
+      - apiGroups: ["authorization.k8s.io"]
+        resources: ["subjectaccessreviews"]
+        verbs: ["create"]
+      - apiGroups: ["apps"]
+        resources: ["deployments", "statefulsets"]
+        verbs: ["get"]
+      - apiGroups: ["batch"]
+        resources: ["jobs"]
+        verbs: ["get"]
+      - apiGroups: [""]
+        resources: ["services"]
+        verbs: ["get"]
+      - apiGroups: [""]
+        resources: ["pods"]
+        verbs: ["list"]
+      - apiGroups: [""]
+        resources: ["namespaces"]
+        verbs: ["get"]
+      - apiGroups: ["discovery.k8s.io"]
+        resources: ["endpointslices"]
+        verbs: ["list"]
+      - apiGroups: ["argoproj.io"]
+        resources: ["applications"]
+        verbs: ["get", "list", "watch"]
+
+  - apiVersion: rbac.authorization.k8s.io/v1
+    kind: ClusterRoleBinding
+    metadata:
+      name: glueops-core-gatekeeper
+    roleRef:
+      apiGroup: rbac.authorization.k8s.io
+      kind: ClusterRole
+      name: glueops-core-gatekeeper
+    subjects:
+      - kind: ServiceAccount
+        name: glueops-core-gatekeeper
+        namespace: glueops-core-gatekeeper
+
+  - apiVersion: apps/v1
+    kind: Deployment
+    metadata:
+      name: gatekeeper
+      namespace: glueops-core-gatekeeper
+    spec:
+      replicas: 1
+      selector:
+        matchLabels:
+          app.kubernetes.io/name: gatekeeper
+      template:
+        metadata:
+          labels:
+            app.kubernetes.io/name: gatekeeper
+        spec:
+          serviceAccountName: glueops-core-gatekeeper
+          nodeSelector:
+            glueops.dev/role: glueops-platform
+          tolerations:
+            - key: "glueops.dev/role"
+              operator: "Equal"
+              value: "glueops-platform"
+              effect: "NoSchedule"
+          containers:
+            - name: gatekeeper
+              image: "ghcr.repo.gpkg.io/glueops/gatekeeper.platform.glueops.dev:placeholder_gatekeeper_tag"
+              imagePullPolicy: IfNotPresent
+              ports:
+                - containerPort: 8080
+                  name: http
+                  protocol: TCP
+              env:
+                - name: PORT
+                  value: "8080"
+                - name: GATEKEEPER_PLATFORM_ALLOWED_NAMESPACES
+                  value: "glueops-core,nonprod"
+                - name: GATEKEEPER_PLATFORM_ALLOWED_NAMESPACE_PREFIXES
+                  value: "glueops-core-"
+              resources:
+                requests:
+                  cpu: 10m
+                  memory: 32Mi
+                limits:
+                  cpu: 100m
+                  memory: 128Mi
+
+  - apiVersion: v1
+    kind: Service
+    metadata:
+      name: gatekeeper
+      namespace: glueops-core-gatekeeper
+    spec:
+      type: ClusterIP
+      selector:
+        app.kubernetes.io/name: gatekeeper
+      ports:
+        - name: http
+          port: 8080
+          targetPort: 8080
+          protocol: TCP
