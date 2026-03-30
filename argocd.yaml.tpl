@@ -486,7 +486,7 @@ extraObjects:
               effect: "NoSchedule"
           containers:
             - name: gatekeeper
-              image: "ghcr.repo.gpkg.io/glueops/gatekeeper.platform.glueops.dev:placeholder_gatekeeper_tag"
+              image: "ghcr.repo.gpkg.io/glueops/platform-gatekeeper:placeholder_gatekeeper_tag"
               imagePullPolicy: IfNotPresent
               ports:
                 - containerPort: 8080
