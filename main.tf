@@ -56,6 +56,11 @@ variable "gatekeeper_tag" {
   description = "Image tag (SHA or semver) for ghcr.repo.gpkg.io/glueops/gatekeeper.platform.glueops.dev"
 }
 
+variable "gatekeeper_platform_allowed_namespaces" {
+  type        = string
+  description = "Comma-separated list of namespaces that the gatekeeper platform is allowed to manage"
+}
+
 
 output "helm_values" {
   value = replace(replace(replace(replace(replace(
@@ -68,6 +73,7 @@ output "helm_values" {
       "placeholder_glueops_root_domain", var.glueops_root_domain),
       "      placeholder_argocd_rbac_policies", var.argocd_rbac_policies),
       "placeholder_argocd_app_version", var.argocd_app_version),
-    "placeholder_gatekeeper_tag", var.gatekeeper_tag
+    "placeholder_gatekeeper_tag", var.gatekeeper_tag),
+    "placeholder_gatekeeper_platform_allowed_namespaces", var.gatekeeper_platform_allowed_namespaces
   )
 }
