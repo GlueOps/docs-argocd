@@ -63,7 +63,7 @@ variable "gatekeeper_platform_allowed_namespaces" {
 
 
 output "helm_values" {
-  value = replace(replace(replace(replace(replace(
+  value = replace(replace(replace(replace(replace(replace(
     replace(
       replace(
         data.local_file.argocd_template.content,
