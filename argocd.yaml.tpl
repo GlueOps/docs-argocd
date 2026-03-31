@@ -496,7 +496,7 @@ extraObjects:
                 - name: PORT
                   value: "8080"
                 - name: GATEKEEPER_PLATFORM_ALLOWED_NAMESPACES
-                  value: "placeholder_gatekeeper_platform_allowed_namespaces"
+                  value: "placeholder_cluster_environment"
                 - name: GATEKEEPER_PLATFORM_ALLOWED_NAMESPACE_PREFIXES
                   value: "glueops-core-"
               resources:
