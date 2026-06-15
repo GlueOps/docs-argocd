@@ -85,115 +85,115 @@ locals {
   otel_extension_semver = trimprefix(var.otel_extension_version, "v")
   otel_extension_config = var.otel_enabled ? (
     <<-EOT
-    extension.config: |
-      extensions:
-        - name: otel-extension
-          backend:
-            services:
-              - url: http://otel-extension-api.glueops-core.svc.cluster.local:8000
+        extension.config: |
+          extensions:
+            - name: otel-extension
+              backend:
+                services:
+                  - url: http://otel-extension-api.glueops-core.svc.cluster.local:8000
     EOT
   ) : ""
   otel_rbac_policies = var.otel_enabled ? (
     <<-EOT
-      p, role:readonly, extensions, invoke, otel-extension, allow
-      p, role:admin, extensions, invoke, otel-extension, allow
+          p, role:readonly, extensions, invoke, otel-extension, allow
+          p, role:admin, extensions, invoke, otel-extension, allow
     EOT
   ) : ""
   otel_server_extensions = var.otel_enabled ? (
     <<-EOT
-  extensions:
-    enabled: true
-    extensionList:
-      - name: otel-extension
-        env:
-          - name: EXTENSION_URL
-            value: "https://github.com/GlueOps/argo-cd-ui-extention/releases/download/placeholder_otel_extension_version/extension.tar.gz"
-          - name: EXTENSION_VERSION
-            value: "placeholder_otel_extension_semver"
-          - name: EXTENSION_ENABLED
-            value: "true"
+      extensions:
+        enabled: true
+        extensionList:
+          - name: otel-extension
+            env:
+              - name: EXTENSION_URL
+                value: "https://github.com/GlueOps/argo-cd-ui-extention/releases/download/placeholder_otel_extension_version/extension.tar.gz"
+              - name: EXTENSION_VERSION
+                value: "placeholder_otel_extension_semver"
+              - name: EXTENSION_ENABLED
+                value: "true"
     EOT
   ) : ""
   otel_backend_objects = var.otel_enabled ? (
     <<-EOT
 
-  - apiVersion: apps/v1
-    kind: Deployment
-    metadata:
-      name: otel-extension-api
-      namespace: glueops-core
-      labels:
-        app.kubernetes.io/name: otel-extension-api
-    spec:
-      replicas: 2
-      selector:
-        matchLabels:
-          app.kubernetes.io/name: otel-extension-api
-      template:
+      - apiVersion: apps/v1
+        kind: Deployment
         metadata:
+          name: otel-extension-api
+          namespace: glueops-core
           labels:
             app.kubernetes.io/name: otel-extension-api
         spec:
-          nodeSelector:
-            glueops.dev/role: glueops-platform
-          tolerations:
-            - key: "glueops.dev/role"
-              operator: "Equal"
-              value: "glueops-platform"
-              effect: "NoSchedule"
-          containers:
-            - name: otel-extension-api
-              image: "ghcr.repo.gpkg.io/glueops/argocd-otel-extension-api:placeholder_otel_backend_tag"
-              imagePullPolicy: IfNotPresent
-              ports:
-                - name: http
-                  containerPort: 8000
-                  protocol: TCP
-              env:
-                - name: PORT
-                  value: "8000"
-                - name: PROMETHEUS_BASE_URL
-                  value: "http://kps-prometheus.glueops-core-kube-prometheus-stack.svc.cluster.local:9090"
-                - name: TEMPO_BASE_URL
-                  value: "placeholder_tempo_base_url"
-                - name: LOG_LEVEL
-                  value: "INFO"
-              readinessProbe:
-                httpGet:
-                  path: /healthz
-                  port: http
-                initialDelaySeconds: 5
-                periodSeconds: 10
-              livenessProbe:
-                httpGet:
-                  path: /healthz
-                  port: http
-                initialDelaySeconds: 15
-                periodSeconds: 20
-              resources:
-                requests:
-                  cpu: 50m
-                  memory: 64Mi
-                limits:
-                  cpu: 250m
-                  memory: 256Mi
+          replicas: 2
+          selector:
+            matchLabels:
+              app.kubernetes.io/name: otel-extension-api
+          template:
+            metadata:
+              labels:
+                app.kubernetes.io/name: otel-extension-api
+            spec:
+              nodeSelector:
+                glueops.dev/role: glueops-platform
+              tolerations:
+                - key: "glueops.dev/role"
+                  operator: "Equal"
+                  value: "glueops-platform"
+                  effect: "NoSchedule"
+              containers:
+                - name: otel-extension-api
+                  image: "ghcr.repo.gpkg.io/glueops/argocd-otel-extension-api:placeholder_otel_backend_tag"
+                  imagePullPolicy: IfNotPresent
+                  ports:
+                    - name: http
+                      containerPort: 8000
+                      protocol: TCP
+                  env:
+                    - name: PORT
+                      value: "8000"
+                    - name: PROMETHEUS_BASE_URL
+                      value: "http://kps-prometheus.glueops-core-kube-prometheus-stack.svc.cluster.local:9090"
+                    - name: TEMPO_BASE_URL
+                      value: "placeholder_tempo_base_url"
+                    - name: LOG_LEVEL
+                      value: "INFO"
+                  readinessProbe:
+                    httpGet:
+                      path: /healthz
+                      port: http
+                    initialDelaySeconds: 5
+                    periodSeconds: 10
+                  livenessProbe:
+                    httpGet:
+                      path: /healthz
+                      port: http
+                    initialDelaySeconds: 15
+                    periodSeconds: 20
+                  resources:
+                    requests:
+                      cpu: 50m
+                      memory: 64Mi
+                    limits:
+                      cpu: 250m
+                      memory: 256Mi
 
-  - apiVersion: v1
-    kind: Service
-    metadata:
-      name: otel-extension-api
-      namespace: glueops-core
-      labels:
-        app.kubernetes.io/name: otel-extension-api
-    spec:
-      type: ClusterIP
-      selector:
-        app.kubernetes.io/name: otel-extension-api
-      ports:
-        - name: http
-          port: 8000
-          targetPort: http
-          protocol: TCP
+      - apiVersion: v1
+        kind: Service
+        metadata:
+          name: otel-extension-api
+          namespace: glueops-core
+          labels:
+            app.kubernetes.io/name: otel-extension-api
+        spec:
+          type: ClusterIP
+          selector:
+            app.kubernetes.io/name: otel-extension-api
+          ports:
+            - name: http
+              port: 8000
+              targetPort: http
+              protocol: TCP
     EOT
   ) : ""
 
@@ -247,19 +247,19 @@ locals {
 
   rendered_argocd_values_otel_extension_config = replace(
     local.rendered_argocd_values_otel_enabled,
-    "# placeholder_otel_extension_config",
+    "    # placeholder_otel_extension_config",
     local.otel_extension_config
   )
 
   rendered_argocd_values_otel_rbac = replace(
     local.rendered_argocd_values_otel_extension_config,
-    "# placeholder_otel_rbac_policies",
+    "      # placeholder_otel_rbac_policies",
     local.otel_rbac_policies
   )
 
   rendered_argocd_values_otel_server_extensions = replace(
     local.rendered_argocd_values_otel_rbac,
-    "# placeholder_otel_server_extensions",
+    "  # placeholder_otel_server_extensions",
     local.otel_server_extensions
   )
 
