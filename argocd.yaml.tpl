@@ -218,12 +218,7 @@ configs:
       clientID: argocd
       clientSecret: placeholder_argocd_oidc_client_secret_from_dex
       redirectURI: https://argocd.placeholder_cluster_environment.placeholder_tenant_key.placeholder_glueops_root_domain/api/dex/callback
-    extension.config: |
-      extensions:
-        - name: otel-extension
-          backend:
-            services:
-              - url: http://otel-extension-api.glueops-core.svc.cluster.local:8000
+placeholder_otel_extension_config
   rbac:
     # -- A good reference for this is: https://argo-cd.readthedocs.io/en/stable/operator-manual/rbac/
     # This default policy is for GlueOps orgs/teams only. Please change it to reflect your own orgs/teams.
@@ -231,21 +226,10 @@ configs:
     # @default -- `''` (See [values.yaml])
     policy.csv: |
       placeholder_argocd_rbac_policies
-      p, role:readonly, extensions, invoke, otel-extension, allow
-      p, role:admin, extensions, invoke, otel-extension, allow
+placeholder_otel_rbac_policies
   # @ignored
 server:
-  extensions:
-    enabled: placeholder_otel_enabled
-    extensionList:
-      - name: otel-extension
-        env:
-          - name: EXTENSION_URL
-            value: "https://github.com/GlueOps/argo-cd-ui-extention/releases/download/placeholder_otel_extension_version/extension.tar.gz"
-          - name: EXTENSION_VERSION
-            value: "placeholder_otel_extension_semver"
-          - name: EXTENSION_ENABLED
-            value: "placeholder_otel_enabled"
+placeholder_otel_server_extensions
   # @ignored
   affinity:
     nodeAffinity:
@@ -316,84 +300,7 @@ extraObjects:
                     name: argocd-server
                     port:
                       number: 80
-
-  - apiVersion: apps/v1
-    kind: Deployment
-    metadata:
-      name: otel-extension-api
-      namespace: glueops-core
-      labels:
-        app.kubernetes.io/name: otel-extension-api
-    spec:
-      replicas: placeholder_otel_backend_replicas
-      selector:
-        matchLabels:
-          app.kubernetes.io/name: otel-extension-api
-      template:
-        metadata:
-          labels:
-            app.kubernetes.io/name: otel-extension-api
-        spec:
-          nodeSelector:
-            glueops.dev/role: glueops-platform
-          tolerations:
-            - key: "glueops.dev/role"
-              operator: "Equal"
-              value: "glueops-platform"
-              effect: "NoSchedule"
-          containers:
-            - name: otel-extension-api
-              image: "ghcr.repo.gpkg.io/glueops/argocd-otel-extension-api:placeholder_otel_backend_tag"
-              imagePullPolicy: IfNotPresent
-              ports:
-                - name: http
-                  containerPort: 8000
-                  protocol: TCP
-              env:
-                - name: PORT
-                  value: "8000"
-                - name: PROMETHEUS_BASE_URL
-                  value: "http://kps-prometheus.glueops-core-kube-prometheus-stack.svc.cluster.local:9090"
-                - name: TEMPO_BASE_URL
-                  value: "placeholder_tempo_base_url"
-                - name: LOG_LEVEL
-                  value: "INFO"
-              readinessProbe:
-                httpGet:
-                  path: /healthz
-                  port: http
-                initialDelaySeconds: 5
-                periodSeconds: 10
-              livenessProbe:
-                httpGet:
-                  path: /healthz
-                  port: http
-                initialDelaySeconds: 15
-                periodSeconds: 20
-              resources:
-                requests:
-                  cpu: 50m
-                  memory: 64Mi
-                limits:
-                  cpu: 250m
-                  memory: 256Mi
-
-  - apiVersion: v1
-    kind: Service
-    metadata:
-      name: otel-extension-api
-      namespace: glueops-core
-      labels:
-        app.kubernetes.io/name: otel-extension-api
-    spec:
-      type: ClusterIP
-      selector:
-        app.kubernetes.io/name: otel-extension-api
-      ports:
-        - name: http
-          port: 8000
-          targetPort: http
-          protocol: TCP
+placeholder_otel_backend_objects
 
   - apiVersion: apiextensions.k8s.io/v1
     kind: CustomResourceDefinition

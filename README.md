@@ -18,7 +18,7 @@ wget -O argocd.yaml https://raw.githubusercontent.com/GlueOps/docs-argocd/main/a
     - Replace `placeholder_cluster_environment` with your cluster_environment name. Example: `nonprod`
     - The `placeholder_argocd_oidc_client_secret_from_dex` that you specify needs to be the same one you use in the `platform.yaml` for ArgoCD. If they do not match you will not be able to login.
     - OTEL is tenant-overridable through the Terraform module inputs:
-      - `otel_enabled` enables or disables the global ArgoCD OTEL extension for the tenant.
+      - `otel_enabled` enables or disables the global ArgoCD OTEL extension for the tenant. The default is `false`, so tenants must opt in explicitly.
       - `otel_extension_version` sets the GitHub release tag used for the extension tarball.
       - `otel_backend_tag` sets the OTEL backend API image tag.
       - `tempo_base_url` sets the in-cluster Tempo endpoint. Leave it empty to disable traces while keeping metrics enabled.
