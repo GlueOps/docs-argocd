@@ -247,25 +247,25 @@ locals {
 
   rendered_argocd_values_otel_extension_config = replace(
     local.rendered_argocd_values_otel_enabled,
-    "placeholder_otel_extension_config",
+    "# placeholder_otel_extension_config",
     local.otel_extension_config
   )
 
   rendered_argocd_values_otel_rbac = replace(
     local.rendered_argocd_values_otel_extension_config,
-    "placeholder_otel_rbac_policies",
+    "# placeholder_otel_rbac_policies",
     local.otel_rbac_policies
   )
 
   rendered_argocd_values_otel_server_extensions = replace(
     local.rendered_argocd_values_otel_rbac,
-    "placeholder_otel_server_extensions",
+    "# placeholder_otel_server_extensions",
     local.otel_server_extensions
   )
 
   rendered_argocd_values_otel_backend_objects = replace(
     local.rendered_argocd_values_otel_server_extensions,
-    "placeholder_otel_backend_objects",
+    "# placeholder_otel_backend_objects",
     local.otel_backend_objects
   )
 

@@ -218,7 +218,7 @@ configs:
       clientID: argocd
       clientSecret: placeholder_argocd_oidc_client_secret_from_dex
       redirectURI: https://argocd.placeholder_cluster_environment.placeholder_tenant_key.placeholder_glueops_root_domain/api/dex/callback
-placeholder_otel_extension_config
+# placeholder_otel_extension_config
   rbac:
     # -- A good reference for this is: https://argo-cd.readthedocs.io/en/stable/operator-manual/rbac/
     # This default policy is for GlueOps orgs/teams only. Please change it to reflect your own orgs/teams.
@@ -226,10 +226,10 @@ placeholder_otel_extension_config
     # @default -- `''` (See [values.yaml])
     policy.csv: |
       placeholder_argocd_rbac_policies
-placeholder_otel_rbac_policies
+# placeholder_otel_rbac_policies
   # @ignored
 server:
-placeholder_otel_server_extensions
+# placeholder_otel_server_extensions
   # @ignored
   affinity:
     nodeAffinity:
@@ -300,7 +300,7 @@ extraObjects:
                     name: argocd-server
                     port:
                       number: 80
-placeholder_otel_backend_objects
+# placeholder_otel_backend_objects
 
   - apiVersion: apiextensions.k8s.io/v1
     kind: CustomResourceDefinition
