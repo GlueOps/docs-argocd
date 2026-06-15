@@ -165,7 +165,7 @@ applicationSet:
 configs:
   params:
     server.insecure: true
-    server.enable.proxy.extension: true
+    server.enable.proxy.extension: placeholder_otel_enabled
   cm:
     # @ignored
     timeout.reconciliation: 10s
@@ -236,16 +236,16 @@ configs:
   # @ignored
 server:
   extensions:
-    enabled: true
+    enabled: placeholder_otel_enabled
     extensionList:
       - name: otel-extension
         env:
           - name: EXTENSION_URL
-            value: "https://github.com/GlueOps/argo-cd-ui-extention/releases/download/v0.1.1/extension.tar.gz"
+            value: "https://github.com/GlueOps/argo-cd-ui-extention/releases/download/placeholder_otel_extension_version/extension.tar.gz"
           - name: EXTENSION_VERSION
-            value: "0.1.1"
+            value: "placeholder_otel_extension_semver"
           - name: EXTENSION_ENABLED
-            value: "true"
+            value: "placeholder_otel_enabled"
   # @ignored
   affinity:
     nodeAffinity:
@@ -325,7 +325,7 @@ extraObjects:
       labels:
         app.kubernetes.io/name: otel-extension-api
     spec:
-      replicas: 2
+      replicas: placeholder_otel_backend_replicas
       selector:
         matchLabels:
           app.kubernetes.io/name: otel-extension-api
@@ -343,7 +343,7 @@ extraObjects:
               effect: "NoSchedule"
           containers:
             - name: otel-extension-api
-              image: "ghcr.repo.gpkg.io/glueops/argocd-otel-extension-api:v0.1.1"
+              image: "ghcr.repo.gpkg.io/glueops/argocd-otel-extension-api:placeholder_otel_backend_tag"
               imagePullPolicy: IfNotPresent
               ports:
                 - name: http
