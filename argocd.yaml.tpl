@@ -241,9 +241,9 @@ server:
       - name: otel-extension
         env:
           - name: EXTENSION_URL
-            value: "https://github.com/GlueOps/argo-cd-ui-extention/releases/download/placeholder_otel_extension_version/extension.tar.gz"
+            value: "https://github.com/GlueOps/argo-cd-ui-extention/releases/download/v0.1.1/extension.tar.gz"
           - name: EXTENSION_VERSION
-            value: "placeholder_otel_extension_version"
+            value: "0.1.1"
           - name: EXTENSION_ENABLED
             value: "true"
   # @ignored
@@ -343,7 +343,7 @@ extraObjects:
               effect: "NoSchedule"
           containers:
             - name: otel-extension-api
-              image: "ghcr.repo.gpkg.io/glueops/argocd-otel-extension-api:placeholder_otel_backend_tag"
+              image: "ghcr.repo.gpkg.io/glueops/argocd-otel-extension-api:v0.1.1"
               imagePullPolicy: IfNotPresent
               ports:
                 - name: http
