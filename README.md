@@ -17,6 +17,11 @@ wget -O argocd.yaml https://raw.githubusercontent.com/GlueOps/docs-argocd/main/a
     - Replace `placeholder_tenant_key` with your tenant/company key. Example: `antoniostacos`
     - Replace `placeholder_cluster_environment` with your cluster_environment name. Example: `nonprod`
     - The `placeholder_argocd_oidc_client_secret_from_dex` that you specify needs to be the same one you use in the `platform.yaml` for ArgoCD. If they do not match you will not be able to login.
+    - Global OTEL extension placeholders:
+      - Replace `placeholder_otel_extension_version` with the extension release tag (example: `v0.1.0`).
+      - Replace `placeholder_otel_backend_tag` with the backend API image tag.
+      - Replace `placeholder_tempo_base_url` with your in-cluster Tempo endpoint.
+    - The OTEL extension is defined in `argocd.yaml` and loaded by ArgoCD itself, so it is global for all Argo applications without changing app templates.
 
 - Install ArgoCD
 
