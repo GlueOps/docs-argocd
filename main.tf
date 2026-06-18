@@ -301,7 +301,22 @@ output "helm_values" {
   }
 
   precondition {
+    condition     = !var.otel_enabled || length(regexall("\\s", local.otel_extension_version_trimmed)) == 0
+    error_message = "otel_extension_version must not contain whitespace when otel_enabled is true"
+  }
+
+  precondition {
     condition     = !var.otel_enabled || trimspace(var.otel_backend_tag) != ""
     error_message = "otel_backend_tag must be non-empty when otel_enabled is true"
+  }
+
+  precondition {
+    condition     = !var.otel_enabled || length(regexall("\\s", local.otel_backend_tag_trimmed)) == 0
+    error_message = "otel_backend_tag must not contain whitespace when otel_enabled is true"
+  }
+
+  precondition {
+    condition     = !var.otel_enabled || local.tempo_base_url_trimmed == "" || length(regexall("\\s", local.tempo_base_url_trimmed)) == 0
+    error_message = "tempo_base_url must not contain whitespace when otel_enabled is true"
   }
 }
