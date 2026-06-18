@@ -83,119 +83,111 @@ variable "tempo_base_url" {
 locals {
   otel_enabled_string   = var.otel_enabled ? "true" : "false"
   otel_extension_semver = trimprefix(var.otel_extension_version, "v")
-  otel_extension_config = var.otel_enabled ? (
-    <<-EOT
-        extension.config: |
-          extensions:
-            - name: otel-extension
-              backend:
-                services:
-                  - url: http://otel-extension-api.glueops-core.svc.cluster.local:8000
-    EOT
-  ) : ""
-  otel_rbac_policies = var.otel_enabled ? (
-    <<-EOT
-          p, role:readonly, extensions, invoke, otel-extension, allow
-          p, role:admin, extensions, invoke, otel-extension, allow
-    EOT
-  ) : ""
-  otel_server_extensions = var.otel_enabled ? (
-    <<-EOT
-      extensions:
-        enabled: true
-        extensionList:
-          - name: otel-extension
-            env:
-              - name: EXTENSION_URL
-                value: "https://github.com/GlueOps/argo-cd-ui-extention/releases/download/placeholder_otel_extension_version/extension.tar.gz"
-              - name: EXTENSION_VERSION
-                value: "placeholder_otel_extension_semver"
-              - name: EXTENSION_ENABLED
-                value: "true"
-    EOT
-  ) : ""
-  otel_backend_objects = var.otel_enabled ? (
-    <<-EOT
-
-      - apiVersion: apps/v1
-        kind: Deployment
-        metadata:
-          name: otel-extension-api
-          namespace: glueops-core
-          labels:
-            app.kubernetes.io/name: otel-extension-api
-        spec:
-          replicas: 2
-          selector:
-            matchLabels:
-              app.kubernetes.io/name: otel-extension-api
-          template:
-            metadata:
-              labels:
-                app.kubernetes.io/name: otel-extension-api
-            spec:
-              nodeSelector:
-                glueops.dev/role: glueops-platform
-              tolerations:
-                - key: "glueops.dev/role"
-                  operator: "Equal"
-                  value: "glueops-platform"
-                  effect: "NoSchedule"
-              containers:
-                - name: otel-extension-api
-                  image: "ghcr.repo.gpkg.io/glueops/argocd-otel-extension-api:placeholder_otel_backend_tag"
-                  imagePullPolicy: IfNotPresent
-                  ports:
-                    - name: http
-                      containerPort: 8000
-                      protocol: TCP
-                  env:
-                    - name: PORT
-                      value: "8000"
-                    - name: PROMETHEUS_BASE_URL
-                      value: "http://kps-prometheus.glueops-core-kube-prometheus-stack.svc.cluster.local:9090"
-                    - name: TEMPO_BASE_URL
-                      value: "placeholder_tempo_base_url"
-                    - name: LOG_LEVEL
-                      value: "INFO"
-                  readinessProbe:
-                    httpGet:
-                      path: /healthz
-                      port: http
-                    initialDelaySeconds: 5
-                    periodSeconds: 10
-                  livenessProbe:
-                    httpGet:
-                      path: /healthz
-                      port: http
-                    initialDelaySeconds: 15
-                    periodSeconds: 20
-                  resources:
-                    requests:
-                      cpu: 50m
-                      memory: 64Mi
-                    limits:
-                      cpu: 250m
-                      memory: 256Mi
-
-      - apiVersion: v1
-        kind: Service
-        metadata:
-          name: otel-extension-api
-          namespace: glueops-core
-          labels:
-            app.kubernetes.io/name: otel-extension-api
-        spec:
-          type: ClusterIP
-          selector:
-            app.kubernetes.io/name: otel-extension-api
-          ports:
-            - name: http
-              port: 8000
-              targetPort: http
-              protocol: TCP
-    EOT
-  ) : ""
+  otel_extension_config = var.otel_enabled ? join("\n", [
+    "    extension.config: |",
+    "      extensions:",
+    "        - name: otel-extension",
+    "          backend:",
+    "            services:",
+    "              - url: http://otel-extension-api.glueops-core.svc.cluster.local:8000",
+  ]) : ""
+  otel_rbac_policies = var.otel_enabled ? join("\n", [
+    "      p, role:readonly, extensions, invoke, otel-extension, allow",
+    "      p, role:admin, extensions, invoke, otel-extension, allow",
+  ]) : ""
+  otel_server_extensions = var.otel_enabled ? join("\n", [
+    "  extensions:",
+    "    enabled: true",
+    "    extensionList:",
+    "      - name: otel-extension",
+    "        env:",
+    "          - name: EXTENSION_URL",
+    "            value: \"https://github.com/GlueOps/argo-cd-ui-extention/releases/download/placeholder_otel_extension_version/extension.tar.gz\"",
+    "          - name: EXTENSION_VERSION",
+    "            value: \"placeholder_otel_extension_semver\"",
+    "          - name: EXTENSION_ENABLED",
+    "            value: \"true\"",
+  ]) : ""
+  otel_backend_objects = var.otel_enabled ? join("\n", [
+    "",
+    "  - apiVersion: apps/v1",
+    "    kind: Deployment",
+    "    metadata:",
+    "      name: otel-extension-api",
+    "      namespace: glueops-core",
+    "      labels:",
+    "        app.kubernetes.io/name: otel-extension-api",
+    "    spec:",
+    "      replicas: 2",
+    "      selector:",
+    "        matchLabels:",
+    "          app.kubernetes.io/name: otel-extension-api",
+    "      template:",
+    "        metadata:",
+    "          labels:",
+    "            app.kubernetes.io/name: otel-extension-api",
+    "        spec:",
+    "          nodeSelector:",
+    "            glueops.dev/role: glueops-platform",
+    "          tolerations:",
+    "            - key: \"glueops.dev/role\"",
+    "              operator: \"Equal\"",
+    "              value: \"glueops-platform\"",
+    "              effect: \"NoSchedule\"",
+    "          containers:",
+    "            - name: otel-extension-api",
+    "              image: \"ghcr.repo.gpkg.io/glueops/argocd-otel-extension-api:placeholder_otel_backend_tag\"",
+    "              imagePullPolicy: IfNotPresent",
+    "              ports:",
+    "                - name: http",
+    "                  containerPort: 8000",
+    "                  protocol: TCP",
+    "              env:",
+    "                - name: PORT",
+    "                  value: \"8000\"",
+    "                - name: PROMETHEUS_BASE_URL",
+    "                  value: \"http://kps-prometheus.glueops-core-kube-prometheus-stack.svc.cluster.local:9090\"",
+    "                - name: TEMPO_BASE_URL",
+    "                  value: \"placeholder_tempo_base_url\"",
+    "                - name: LOG_LEVEL",
+    "                  value: \"INFO\"",
+    "              readinessProbe:",
+    "                httpGet:",
+    "                  path: /healthz",
+    "                  port: http",
+    "                initialDelaySeconds: 5",
+    "                periodSeconds: 10",
+    "              livenessProbe:",
+    "                httpGet:",
+    "                  path: /healthz",
+    "                  port: http",
+    "                initialDelaySeconds: 15",
+    "                periodSeconds: 20",
+    "              resources:",
+    "                requests:",
+    "                  cpu: 50m",
+    "                  memory: 64Mi",
+    "                limits:",
+    "                  cpu: 250m",
+    "                  memory: 256Mi",
+    "",
+    "  - apiVersion: v1",
+    "    kind: Service",
+    "    metadata:",
+    "      name: otel-extension-api",
+    "      namespace: glueops-core",
+    "      labels:",
+    "        app.kubernetes.io/name: otel-extension-api",
+    "    spec:",
+    "      type: ClusterIP",
+    "      selector:",
+    "        app.kubernetes.io/name: otel-extension-api",
+    "      ports:",
+    "        - name: http",
+    "          port: 8000",
+    "          targetPort: http",
+    "          protocol: TCP",
+  ]) : ""
 
   rendered_argocd_values_tenant = replace(
     data.local_file.argocd_template.content,
@@ -297,4 +289,14 @@ locals {
 
 output "helm_values" {
   value = local.rendered_argocd_values
+
+  precondition {
+    condition     = !var.otel_enabled || trimspace(var.otel_extension_version) != ""
+    error_message = "otel_extension_version must be non-empty when otel_enabled is true"
+  }
+
+  precondition {
+    condition     = !var.otel_enabled || trimspace(var.otel_backend_tag) != ""
+    error_message = "otel_backend_tag must be non-empty when otel_enabled is true"
+  }
 }
