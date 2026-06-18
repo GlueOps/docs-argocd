@@ -22,6 +22,7 @@ wget -O argocd.yaml https://raw.githubusercontent.com/GlueOps/docs-argocd/main/a
       - `otel_extension_version` sets the GitHub release tag used for the extension tarball.
       - `otel_backend_tag` sets the OTEL backend API image tag.
       - `tempo_base_url` sets the in-cluster Tempo endpoint. Leave it empty to disable traces while keeping metrics enabled.
+    - If you are installing from the downloaded `argocd.yaml.tpl` directly instead of using Terraform, replace `placeholder_otel_enabled` with `true` or `false` before running Helm. Leave the OTEL placeholder comments in place to keep OTEL disabled, or replace those placeholder comments with concrete OTEL config, RBAC, server extension, and backend object blocks if you want OTEL enabled without Terraform.
     - The OTEL extension is defined in `argocd.yaml` and loaded by ArgoCD itself, so it is global for all Argo applications without changing app templates.
 
 - Install ArgoCD
