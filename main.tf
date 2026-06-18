@@ -84,7 +84,10 @@ variable "tempo_base_url" {
 
 locals {
   otel_enabled_string   = var.otel_enabled ? "true" : "false"
-  otel_extension_semver = trimprefix(var.otel_extension_version, "v")
+  otel_extension_version_trimmed = trimspace(var.otel_extension_version)
+  otel_backend_tag_trimmed       = trimspace(var.otel_backend_tag)
+  tempo_base_url_trimmed         = trimspace(var.tempo_base_url)
+  otel_extension_semver          = trimprefix(local.otel_extension_version_trimmed, "v")
   otel_extension_config = var.otel_enabled ? join("\n", [
     "    extension.config: |",
     "      extensions:",
@@ -266,7 +269,7 @@ locals {
   rendered_argocd_values_otel_version = replace(
     local.rendered_argocd_values_otel_backend_objects,
     "placeholder_otel_extension_version",
-    var.otel_extension_version
+    local.otel_extension_version_trimmed
   )
 
   rendered_argocd_values_otel_semver = replace(
@@ -278,13 +281,13 @@ locals {
   rendered_argocd_values_otel_backend_tag = replace(
     local.rendered_argocd_values_otel_semver,
     "placeholder_otel_backend_tag",
-    var.otel_backend_tag
+    local.otel_backend_tag_trimmed
   )
 
   rendered_argocd_values = replace(
     local.rendered_argocd_values_otel_backend_tag,
     "placeholder_tempo_base_url",
-    var.tempo_base_url
+    local.tempo_base_url_trimmed
   )
 }
 
