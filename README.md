@@ -22,7 +22,7 @@ wget -O argocd.yaml https://raw.githubusercontent.com/GlueOps/docs-argocd/main/a
       - `otel_extension_version` sets the GitHub release tag used for the extension tarball.
       - `otel_backend_tag` sets the OTEL backend API image tag.
       - `tempo_base_url` sets the in-cluster Tempo endpoint. Leave it empty to disable traces while keeping metrics enabled.
-    - If you are installing from the downloaded `argocd.yaml.tpl` directly instead of using Terraform, replace `placeholder_otel_enabled` with `true` or `false` before running Helm. Leave the OTEL placeholder comments in place to keep OTEL disabled, or replace those placeholder comments with concrete OTEL config, RBAC, server extension, and backend object blocks if you want OTEL enabled without Terraform.
+    - If you are installing from the downloaded `argocd.yaml` directly instead of using Terraform, replace `placeholder_otel_enabled` with `true` or `false` before running Helm. Leave the OTEL placeholder comments in place to keep OTEL disabled, or replace those placeholder comments with concrete OTEL config, RBAC, server extension, and backend object blocks if you want OTEL enabled without Terraform.
     - The OTEL extension is defined in `argocd.yaml` and loaded by ArgoCD itself, so it is global for all Argo applications without changing app templates.
 
 - Install ArgoCD
@@ -45,18 +45,20 @@ kubectl get pods -n glueops-core
 
 ```hcl
 module "argocd_helm_values" {
-  source              = "git::https://github.com/GlueOps/docs-argocd.git"
-  tenant_key          = "antoniostacos"
-  cluster_environment = "nonprod"
-  client_secret       = "Zsbui/29YEqoGOzuI8snlqGcdaRYPSLocwLXDB5GhZY="
-  glueops_root_domain = "onglueops.com"
-  otel_enabled        = true
-  otel_extension_version = "v0.1.1"
-  otel_backend_tag    = "v0.1.1"
-  tempo_base_url      = "http://tempo.glueops-core-tempo.svc.cluster.local:3200"
+  source                   = "git::https://github.com/GlueOps/docs-argocd.git"
+  tenant_key               = "antoniostacos"
+  cluster_environment      = "nonprod"
+  client_secret            = "Zsbui/29YEqoGOzuI8snlqGcdaRYPSLocwLXDB5GhZY="
+  glueops_root_domain      = "onglueops.com"
+  argocd_app_version       = "v2.8.6"
+  gatekeeper_tag           = "v1.0.0"
+  otel_enabled             = true
+  otel_extension_version   = "v0.1.1"
+  otel_backend_tag         = "v0.1.1"
+  tempo_base_url           = "http://tempo.glueops-core-tempo.svc.cluster.local:3200"
 }
 
 output "argocd_helm_values" {
-  value = module.argocd_yaml.argocd
+  value = module.argocd_helm_values.helm_values
 }
 ```
