@@ -31,7 +31,7 @@ if (PROMETHEUS_BASE_URL) {
       on: {
         error: (err, _req, res) => {
           log('ERROR', `Prometheus proxy error: ${err.message}`);
-          res.status(502).json({ error: 'Bad Gateway', detail: err.message });
+          res.status(502).json({ error: 'Bad Gateway' });
         },
       },
     })
@@ -54,7 +54,7 @@ if (TEMPO_BASE_URL) {
       on: {
         error: (err, _req, res) => {
           log('ERROR', `Tempo proxy error: ${err.message}`);
-          res.status(502).json({ error: 'Bad Gateway', detail: err.message });
+          res.status(502).json({ error: 'Bad Gateway' });
         },
       },
     })
