@@ -66,8 +66,8 @@ variable "otel_enabled" {
 
 variable "otel_extension_version" {
   type        = string
-  description = "GitHub release tag for the ArgoCD OTEL extension tarball (example: v0.1.1)"
-  default     = "v0.1.1"
+  description = "GitHub release tag for the ArgoCD OTEL extension tarball (example: v0.1.2)"
+  default     = "v0.1.2"
 }
 
 variable "otel_backend_tag" {

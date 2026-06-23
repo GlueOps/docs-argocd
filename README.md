@@ -53,8 +53,8 @@ module "argocd_helm_values" {
   argocd_app_version       = "v2.8.6"
   gatekeeper_tag           = "v1.0.0"
   otel_enabled             = true
-  otel_extension_version   = "v0.1.1"
-  otel_backend_tag         = "v0.1.1"
+  otel_extension_version   = "v0.1.2"
+  otel_backend_tag         = "v0.1.2"
   tempo_base_url           = "http://tempo.glueops-core-tempo.svc.cluster.local:3200"
 }
 
