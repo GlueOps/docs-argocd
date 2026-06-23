@@ -72,7 +72,7 @@ variable "otel_extension_version" {
 
 variable "otel_backend_tag" {
   type        = string
-  description = "Image tag (SHA or semver) for ghcr.repo.gpkg.io/glueops/argocd-otel-extension-api"
+  description = "Image tag (SHA or semver) for ghcr.io/glueops/argocd-extension-backend-api"
   default     = "v0.1.1"
 }
 
@@ -94,7 +94,7 @@ locals {
     "        - name: otel-extension",
     "          backend:",
     "            services:",
-    "              - url: http://otel-extension-api.glueops-core.svc.cluster.local:8000",
+    "              - url: http://argocd-extension-backend-api.glueops-core.svc.cluster.local:8000",
   ]) : ""
   otel_rbac_policies = var.otel_enabled ? join("\n", [
     "      p, role:readonly, extensions, invoke, otel-extension, allow",
@@ -110,27 +110,25 @@ locals {
     "            value: \"https://github.com/GlueOps/argo-cd-ui-extention/releases/download/placeholder_otel_extension_version/extension.tar.gz\"",
     "          - name: EXTENSION_VERSION",
     "            value: \"placeholder_otel_extension_semver\"",
-    "          - name: EXTENSION_ENABLED",
-    "            value: \"true\"",
   ]) : ""
   otel_backend_objects = var.otel_enabled ? join("\n", [
     "",
     "  - apiVersion: apps/v1",
     "    kind: Deployment",
     "    metadata:",
-    "      name: otel-extension-api",
+    "      name: argocd-extension-backend-api",
     "      namespace: glueops-core",
     "      labels:",
-    "        app.kubernetes.io/name: otel-extension-api",
+    "        app.kubernetes.io/name: argocd-extension-backend-api",
     "    spec:",
     "      replicas: 2",
     "      selector:",
     "        matchLabels:",
-    "          app.kubernetes.io/name: otel-extension-api",
+    "          app.kubernetes.io/name: argocd-extension-backend-api",
     "      template:",
     "        metadata:",
     "          labels:",
-    "            app.kubernetes.io/name: otel-extension-api",
+    "            app.kubernetes.io/name: argocd-extension-backend-api",
     "        spec:",
     "          nodeSelector:",
     "            glueops.dev/role: glueops-platform",
@@ -140,8 +138,8 @@ locals {
     "              value: \"glueops-platform\"",
     "              effect: \"NoSchedule\"",
     "          containers:",
-    "            - name: otel-extension-api",
-    "              image: \"ghcr.repo.gpkg.io/glueops/argocd-otel-extension-api:placeholder_otel_backend_tag\"",
+    "            - name: argocd-extension-backend-api",
+    "              image: \"ghcr.io/glueops/argocd-extension-backend-api:placeholder_otel_backend_tag\"",
     "              imagePullPolicy: IfNotPresent",
     "              ports:",
     "                - name: http",
@@ -179,14 +177,14 @@ locals {
     "  - apiVersion: v1",
     "    kind: Service",
     "    metadata:",
-    "      name: otel-extension-api",
+    "      name: argocd-extension-backend-api",
     "      namespace: glueops-core",
     "      labels:",
-    "        app.kubernetes.io/name: otel-extension-api",
+    "        app.kubernetes.io/name: argocd-extension-backend-api",
     "    spec:",
     "      type: ClusterIP",
     "      selector:",
-    "        app.kubernetes.io/name: otel-extension-api",
+    "        app.kubernetes.io/name: argocd-extension-backend-api",
     "      ports:",
     "        - name: http",
     "          port: 8000",
