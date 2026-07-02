@@ -5,6 +5,8 @@ crds:
 notifications:
   metrics:
     enabled: true
+  nodeSelector:
+    glueops.dev/role: "glueops-platform"
   affinity:
     nodeAffinity:
       requiredDuringSchedulingIgnoredDuringExecution:
@@ -160,6 +162,8 @@ applicationSet:
   metrics:
     enabled: true
   replicas: 2
+  nodeSelector:
+    glueops.dev/role: "glueops-platform"
   affinity:
     nodeAffinity:
       requiredDuringSchedulingIgnoredDuringExecution:
@@ -233,6 +237,9 @@ configs:
       placeholder_argocd_rbac_policies
   # @ignored
 server:
+  # @ignored
+  nodeSelector:
+    glueops.dev/role: "glueops-platform"
   # @ignored
   affinity:
     nodeAffinity:
