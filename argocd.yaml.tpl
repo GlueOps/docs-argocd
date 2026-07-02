@@ -62,6 +62,11 @@ redis-ha:
               values:
               - "glueops-platform"
   enabled: true
+  # nodeSelector applies to the redis-ha server, haproxy, AND the chart's
+  # helm-test pods (which only honor nodeSelector, not additionalAffinities),
+  # keeping every redis-ha pod on the glueops-platform nodes.
+  nodeSelector:
+    glueops.dev/role: "glueops-platform"
   tolerations:
     - key: "glueops.dev/role"
       operator: "Equal"
