@@ -87,25 +87,7 @@ controller:
           - key: "glueops.dev/role"
             operator: In
             values:
-            - "glueops-platform-argocd-app-controller"
             - "glueops-platform"
-      preferredDuringSchedulingIgnoredDuringExecution:
-      - weight: 100
-        preference:
-          matchExpressions:
-          - key: "glueops.dev/role"
-            operator: In
-            values:
-            - "glueops-platform-argocd-app-controller"
-  tolerations:
-    - key: "glueops.dev/role"
-      operator: "Equal"
-      value: "glueops-platform-argocd-app-controller"
-      effect: "NoSchedule"
-    - key: "glueops.dev/role"
-      operator: "Equal"
-      value: "glueops-platform"
-      effect: "NoSchedule"
   metrics:
     enabled: true
   replicas: 1
