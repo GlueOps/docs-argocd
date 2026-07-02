@@ -41,6 +41,14 @@ redis:
   exporter:
     image:
       repository: "ghcr.repo.gpkg.io/oliver006/redis_exporter"
+# redisSecretInit is a pre-install/pre-upgrade hook Job added in newer argo-cd
+# chart majors (v8/v9). It inherits global.tolerations but no node targeting,
+# so pin it explicitly to keep it on the glueops-platform nodes. (No-op on the
+# currently pinned 5.50.0 chart, which has no redisSecretInit component.)
+# @ignored
+redisSecretInit:
+  nodeSelector:
+    glueops.dev/role: "glueops-platform"
 redis-ha:
   image:
     repository: "ecr.repo.gpkg.io/docker/library/redis"
