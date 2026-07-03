@@ -5,15 +5,6 @@ crds:
 notifications:
   metrics:
     enabled: true
-  affinity:
-    nodeAffinity:
-      requiredDuringSchedulingIgnoredDuringExecution:
-        nodeSelectorTerms:
-        - matchExpressions:
-          - key: "glueops.dev/role"
-            operator: In
-            values:
-            - "glueops-platform"
 
 # @ignored
 global:
@@ -26,6 +17,19 @@ global:
       operator: "Equal"
       value: "glueops-platform"
       effect: "NoSchedule"
+  # Pin every first-party argo-cd component to the glueops-platform nodes from one
+  # place: components without their own affinity inherit this preset; components that
+  # set their own affinity (e.g. controller) override it. The redis-ha subchart and the
+  # gatekeeper extraObject are not reached by global and keep their own settings.
+  affinity:
+    podAntiAffinity: soft
+    nodeAffinity:
+      type: hard
+      matchExpressions:
+        - key: "glueops.dev/role"
+          operator: In
+          values:
+            - "glueops-platform"
   logging:
     format: json
 
@@ -62,6 +66,11 @@ redis-ha:
               values:
               - "glueops-platform"
   enabled: true
+  # nodeSelector applies to the redis-ha server, haproxy, AND the chart's
+  # helm-test pods (which only honor nodeSelector, not additionalAffinities),
+  # keeping every redis-ha pod on the glueops-platform nodes.
+  nodeSelector:
+    glueops.dev/role: "glueops-platform"
   tolerations:
     - key: "glueops.dev/role"
       operator: "Equal"
@@ -122,46 +131,11 @@ repoServer:
   pdb:
     enabled: true
     minAvailable: 2
-  affinity:
-    podAntiAffinity:
-      preferredDuringSchedulingIgnoredDuringExecution:
-      - weight: 100
-        podAffinityTerm:
-          labelSelector:
-            matchLabels:
-              app.kubernetes.io/name: argocd-repo-server
-          topologyKey: kubernetes.io/hostname
-      - weight: 50
-        podAffinityTerm:
-          labelSelector:
-            matchExpressions:
-            - key: app.kubernetes.io/name
-              operator: In
-              values:
-              - argocd-application-controller
-          topologyKey: kubernetes.io/hostname
-    nodeAffinity:
-      requiredDuringSchedulingIgnoredDuringExecution:
-        nodeSelectorTerms:
-        - matchExpressions:
-          - key: "glueops.dev/role"
-            operator: In
-            values:
-            - "glueops-platform"
 # @ignored
 applicationSet:
   metrics:
     enabled: true
   replicas: 2
-  affinity:
-    nodeAffinity:
-      requiredDuringSchedulingIgnoredDuringExecution:
-        nodeSelectorTerms:
-        - matchExpressions:
-          - key: "glueops.dev/role"
-            operator: In
-            values:
-            - "glueops-platform"
 configs:
   params:
     server.insecure: true
@@ -226,16 +200,6 @@ configs:
       placeholder_argocd_rbac_policies
   # @ignored
 server:
-  # @ignored
-  affinity:
-    nodeAffinity:
-      requiredDuringSchedulingIgnoredDuringExecution:
-        nodeSelectorTerms:
-        - matchExpressions:
-          - key: "glueops.dev/role"
-            operator: In
-            values:
-            - "glueops-platform"
   # @ignored
   metrics:
     enabled: true
