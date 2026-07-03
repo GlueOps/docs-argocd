@@ -5,17 +5,6 @@ crds:
 notifications:
   metrics:
     enabled: true
-  nodeSelector:
-    glueops.dev/role: "glueops-platform"
-  affinity:
-    nodeAffinity:
-      requiredDuringSchedulingIgnoredDuringExecution:
-        nodeSelectorTerms:
-        - matchExpressions:
-          - key: "glueops.dev/role"
-            operator: In
-            values:
-            - "glueops-platform"
 
 # @ignored
 global:
@@ -28,6 +17,19 @@ global:
       operator: "Equal"
       value: "glueops-platform"
       effect: "NoSchedule"
+  # Pin every first-party argo-cd component to the glueops-platform nodes from one
+  # place: components without their own affinity inherit this preset; components that
+  # set their own affinity (e.g. controller) override it. The redis-ha subchart and the
+  # gatekeeper extraObject are not reached by global and keep their own settings.
+  affinity:
+    podAntiAffinity: soft
+    nodeAffinity:
+      type: hard
+      matchExpressions:
+        - key: "glueops.dev/role"
+          operator: In
+          values:
+            - "glueops-platform"
   logging:
     format: json
 
@@ -41,14 +43,6 @@ redis:
   exporter:
     image:
       repository: "ghcr.repo.gpkg.io/oliver006/redis_exporter"
-# redisSecretInit is a pre-install/pre-upgrade hook Job added in newer argo-cd
-# chart majors (v8/v9). It inherits global.tolerations but no node targeting,
-# so pin it explicitly to keep it on the glueops-platform nodes. (No-op on the
-# currently pinned 5.50.0 chart, which has no redisSecretInit component.)
-# @ignored
-redisSecretInit:
-  nodeSelector:
-    glueops.dev/role: "glueops-platform"
 redis-ha:
   image:
     repository: "ecr.repo.gpkg.io/docker/library/redis"
@@ -137,50 +131,11 @@ repoServer:
   pdb:
     enabled: true
     minAvailable: 2
-  nodeSelector:
-    glueops.dev/role: "glueops-platform"
-  affinity:
-    podAntiAffinity:
-      preferredDuringSchedulingIgnoredDuringExecution:
-      - weight: 100
-        podAffinityTerm:
-          labelSelector:
-            matchLabels:
-              app.kubernetes.io/name: argocd-repo-server
-          topologyKey: kubernetes.io/hostname
-      - weight: 50
-        podAffinityTerm:
-          labelSelector:
-            matchExpressions:
-            - key: app.kubernetes.io/name
-              operator: In
-              values:
-              - argocd-application-controller
-          topologyKey: kubernetes.io/hostname
-    nodeAffinity:
-      requiredDuringSchedulingIgnoredDuringExecution:
-        nodeSelectorTerms:
-        - matchExpressions:
-          - key: "glueops.dev/role"
-            operator: In
-            values:
-            - "glueops-platform"
 # @ignored
 applicationSet:
   metrics:
     enabled: true
   replicas: 2
-  nodeSelector:
-    glueops.dev/role: "glueops-platform"
-  affinity:
-    nodeAffinity:
-      requiredDuringSchedulingIgnoredDuringExecution:
-        nodeSelectorTerms:
-        - matchExpressions:
-          - key: "glueops.dev/role"
-            operator: In
-            values:
-            - "glueops-platform"
 configs:
   params:
     server.insecure: true
@@ -245,19 +200,6 @@ configs:
       placeholder_argocd_rbac_policies
   # @ignored
 server:
-  # @ignored
-  nodeSelector:
-    glueops.dev/role: "glueops-platform"
-  # @ignored
-  affinity:
-    nodeAffinity:
-      requiredDuringSchedulingIgnoredDuringExecution:
-        nodeSelectorTerms:
-        - matchExpressions:
-          - key: "glueops.dev/role"
-            operator: In
-            values:
-            - "glueops-platform"
   # @ignored
   metrics:
     enabled: true
