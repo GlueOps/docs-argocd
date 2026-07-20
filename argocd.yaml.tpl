@@ -165,7 +165,9 @@ applicationSet:
 configs:
   params:
     server.insecure: true
-    server.enable.proxy.extension: placeholder_otel_enabled
+    # Always true: the OTEL extension ships to every cluster. Required for
+    # argocd-server to proxy the extension's calls to its backend.
+    server.enable.proxy.extension: true
   cm:
     # @ignored
     timeout.reconciliation: 10s
@@ -300,7 +302,6 @@ extraObjects:
                     name: argocd-server
                     port:
                       number: 80
-# placeholder_otel_backend_objects
 
   - apiVersion: apiextensions.k8s.io/v1
     kind: CustomResourceDefinition

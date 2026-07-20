@@ -58,51 +58,57 @@ variable "gatekeeper_tag" {
   description = "Image tag (SHA or semver) for ghcr.repo.gpkg.io/glueops/gatekeeper.platform.glueops.dev"
 }
 
-variable "otel_enabled" {
-  type        = bool
-  description = "Enable or disable the global ArgoCD OTEL extension and its backend service for this tenant"
-  default     = false
-}
-
+# The OTEL extension frontend is always on, for every cluster -- there is no
+# enable/disable switch. That is safe because the frontend renders NOTHING when it
+# has no links to show (see StatusPanel in GlueOps/argo-cd-ui-extention): a cluster
+# whose backend is not up yet shows no panel at all, rather than an error box.
+# This only holds from v0.1.3 onward; v0.1.2 and earlier render a permanent
+# "Observability unavailable" box instead, so do NOT pin this below v0.1.3.
+#
+# Scope: this module configures the FRONTEND only. The backend (Deployment/Service
+# argocd-extension-backend-api) is owned by platform-helm-chart-platform, which
+# deploys it as an Argo CD Application into glueops-core-argocd-extension-backend.
+# This module must never deploy a second copy of it.
 variable "otel_extension_version" {
   type        = string
-  description = "GitHub release tag for the ArgoCD OTEL extension tarball (example: v0.1.2)"
-  default     = "v0.1.2"
-}
-
-variable "otel_backend_tag" {
-  type        = string
-  description = "Image tag (SHA or semver) for ghcr.io/glueops/argocd-extension-backend-api"
-  default     = "v0.1.1"
-}
-
-variable "tempo_base_url" {
-  type        = string
-  description = "In-cluster Tempo base URL for trace search. Leave empty to disable traces while keeping metrics enabled."
-  default     = ""
+  description = "GitHub release tag for the ArgoCD OTEL extension tarball (example: v0.1.3-rc1). Must be >= v0.1.3: earlier releases do not hide the panel when no data is present."
+  default     = "v0.1.3-rc1"
 }
 
 locals {
-  otel_enabled_string   = var.otel_enabled ? "true" : "false"
   otel_extension_version_trimmed = trimspace(var.otel_extension_version)
-  otel_backend_tag_trimmed       = trimspace(var.otel_backend_tag)
-  tempo_base_url_trimmed         = trimspace(var.tempo_base_url)
   otel_extension_semver          = trimprefix(local.otel_extension_version_trimmed, "v")
-  otel_extension_config = var.otel_enabled ? join("\n", [
+
+  # The backend Service DNS is the SAME on every cluster: both the Service name and
+  # its namespace are hardcoded constants in platform-helm-chart-platform
+  # (templates/application-argocd-extension-backend.yaml), not derived from
+  # captain_domain or the cluster environment. So there is deliberately nothing
+  # per-cluster to substitute here.
+  #
+  # The namespace is glueops-core-argocd-extension-backend -- the Application's
+  # destination namespace -- NOT glueops-core, which does not resolve.
+  otel_extension_config = join("\n", [
     "    extension.config: |",
     "      extensions:",
     "        - name: otel-extension",
     "          backend:",
     "            services:",
-    "              - url: http://argocd-extension-backend-api.glueops-core.svc.cluster.local:8000",
-  ]) : ""
-  otel_rbac_policies = var.otel_enabled ? join("\n", [
+    "              - url: http://argocd-extension-backend-api.glueops-core-argocd-extension-backend.svc.cluster.local:8000",
+  ])
+  otel_rbac_policies = join("\n", [
     "      p, role:readonly, extensions, invoke, otel-extension, allow",
     "      p, role:admin, extensions, invoke, otel-extension, allow",
-  ]) : ""
-  otel_server_extensions = var.otel_enabled ? join("\n", [
+  ])
+  otel_server_extensions = join("\n", [
     "  extensions:",
     "    enabled: true",
+    # The chart defaults this installer image to quay.io directly, unlike every
+    # other image on the platform. Pin it to the gpkg mirror so clusters that
+    # cannot egress to quay.io (or that would hit its rate limits) still start:
+    # this runs as an initContainer on argocd-server, so a failed pull takes the
+    # Argo CD UI down rather than just disabling the extension.
+    "    image:",
+    "      repository: quay.repo.gpkg.io/argoprojlabs/argocd-extension-installer",
     "    extensionList:",
     "      - name: otel-extension",
     "        env:",
@@ -110,88 +116,7 @@ locals {
     "            value: \"https://github.com/GlueOps/argo-cd-ui-extention/releases/download/placeholder_otel_extension_version/extension.tar.gz\"",
     "          - name: EXTENSION_VERSION",
     "            value: \"placeholder_otel_extension_semver\"",
-  ]) : ""
-  otel_backend_objects = var.otel_enabled ? join("\n", [
-    "",
-    "  - apiVersion: apps/v1",
-    "    kind: Deployment",
-    "    metadata:",
-    "      name: argocd-extension-backend-api",
-    "      namespace: glueops-core",
-    "      labels:",
-    "        app.kubernetes.io/name: argocd-extension-backend-api",
-    "    spec:",
-    "      replicas: 2",
-    "      selector:",
-    "        matchLabels:",
-    "          app.kubernetes.io/name: argocd-extension-backend-api",
-    "      template:",
-    "        metadata:",
-    "          labels:",
-    "            app.kubernetes.io/name: argocd-extension-backend-api",
-    "        spec:",
-    "          nodeSelector:",
-    "            glueops.dev/role: glueops-platform",
-    "          tolerations:",
-    "            - key: \"glueops.dev/role\"",
-    "              operator: \"Equal\"",
-    "              value: \"glueops-platform\"",
-    "              effect: \"NoSchedule\"",
-    "          containers:",
-    "            - name: argocd-extension-backend-api",
-    "              image: \"ghcr.io/glueops/argocd-extension-backend-api:placeholder_otel_backend_tag\"",
-    "              imagePullPolicy: IfNotPresent",
-    "              ports:",
-    "                - name: http",
-    "                  containerPort: 8000",
-    "                  protocol: TCP",
-    "              env:",
-    "                - name: PORT",
-    "                  value: \"8000\"",
-    "                - name: PROMETHEUS_BASE_URL",
-    "                  value: \"http://kps-prometheus.glueops-core-kube-prometheus-stack.svc.cluster.local:9090\"",
-    "                - name: TEMPO_BASE_URL",
-    "                  value: \"placeholder_tempo_base_url\"",
-    "                - name: LOG_LEVEL",
-    "                  value: \"INFO\"",
-    "              readinessProbe:",
-    "                httpGet:",
-    "                  path: /healthz",
-    "                  port: http",
-    "                initialDelaySeconds: 5",
-    "                periodSeconds: 10",
-    "              livenessProbe:",
-    "                httpGet:",
-    "                  path: /healthz",
-    "                  port: http",
-    "                initialDelaySeconds: 15",
-    "                periodSeconds: 20",
-    "              resources:",
-    "                requests:",
-    "                  cpu: 50m",
-    "                  memory: 64Mi",
-    "                limits:",
-    "                  cpu: 250m",
-    "                  memory: 256Mi",
-    "",
-    "  - apiVersion: v1",
-    "    kind: Service",
-    "    metadata:",
-    "      name: argocd-extension-backend-api",
-    "      namespace: glueops-core",
-    "      labels:",
-    "        app.kubernetes.io/name: argocd-extension-backend-api",
-    "    spec:",
-    "      type: ClusterIP",
-    "      selector:",
-    "        app.kubernetes.io/name: argocd-extension-backend-api",
-    "      ports:",
-    "        - name: http",
-    "          port: 8000",
-    "          targetPort: http",
-    "          protocol: TCP",
-  ]) : ""
-
+  ])
   rendered_argocd_values_tenant = replace(
     data.local_file.argocd_template.content,
     "placeholder_tenant_key",
@@ -234,14 +159,8 @@ locals {
     var.gatekeeper_tag
   )
 
-  rendered_argocd_values_otel_enabled = replace(
-    local.rendered_argocd_values_gatekeeper,
-    "placeholder_otel_enabled",
-    local.otel_enabled_string
-  )
-
   rendered_argocd_values_otel_extension_config = replace(
-    local.rendered_argocd_values_otel_enabled,
+    local.rendered_argocd_values_gatekeeper,
     "    # placeholder_otel_extension_config",
     local.otel_extension_config
   )
@@ -258,34 +177,16 @@ locals {
     local.otel_server_extensions
   )
 
-  rendered_argocd_values_otel_backend_objects = replace(
-    local.rendered_argocd_values_otel_server_extensions,
-    "# placeholder_otel_backend_objects",
-    local.otel_backend_objects
-  )
-
   rendered_argocd_values_otel_version = replace(
-    local.rendered_argocd_values_otel_backend_objects,
+    local.rendered_argocd_values_otel_server_extensions,
     "placeholder_otel_extension_version",
     local.otel_extension_version_trimmed
   )
 
-  rendered_argocd_values_otel_semver = replace(
+  rendered_argocd_values = replace(
     local.rendered_argocd_values_otel_version,
     "placeholder_otel_extension_semver",
     local.otel_extension_semver
-  )
-
-  rendered_argocd_values_otel_backend_tag = replace(
-    local.rendered_argocd_values_otel_semver,
-    "placeholder_otel_backend_tag",
-    local.otel_backend_tag_trimmed
-  )
-
-  rendered_argocd_values = replace(
-    local.rendered_argocd_values_otel_backend_tag,
-    "placeholder_tempo_base_url",
-    local.tempo_base_url_trimmed
   )
 }
 
@@ -293,28 +194,15 @@ locals {
 output "helm_values" {
   value = local.rendered_argocd_values
 
+  # The extension is always on, so these are unconditional: an empty or malformed
+  # version would render a broken EXTENSION_URL into every cluster's argocd.yaml.
   precondition {
-    condition     = !var.otel_enabled || trimspace(var.otel_extension_version) != ""
-    error_message = "otel_extension_version must be non-empty when otel_enabled is true"
+    condition     = local.otel_extension_version_trimmed != ""
+    error_message = "otel_extension_version must be non-empty"
   }
 
   precondition {
-    condition     = !var.otel_enabled || length(regexall("\\s", local.otel_extension_version_trimmed)) == 0
-    error_message = "otel_extension_version must not contain whitespace when otel_enabled is true"
-  }
-
-  precondition {
-    condition     = !var.otel_enabled || trimspace(var.otel_backend_tag) != ""
-    error_message = "otel_backend_tag must be non-empty when otel_enabled is true"
-  }
-
-  precondition {
-    condition     = !var.otel_enabled || length(regexall("\\s", local.otel_backend_tag_trimmed)) == 0
-    error_message = "otel_backend_tag must not contain whitespace when otel_enabled is true"
-  }
-
-  precondition {
-    condition     = !var.otel_enabled || local.tempo_base_url_trimmed == "" || length(regexall("\\s", local.tempo_base_url_trimmed)) == 0
-    error_message = "tempo_base_url must not contain whitespace when otel_enabled is true"
+    condition     = length(regexall("\\s", local.otel_extension_version_trimmed)) == 0
+    error_message = "otel_extension_version must not contain whitespace"
   }
 }
