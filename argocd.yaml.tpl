@@ -191,6 +191,15 @@ configs:
       clientID: argocd
       clientSecret: placeholder_argocd_oidc_client_secret_from_dex
       redirectURI: https://argocd.placeholder_cluster_environment.placeholder_tenant_key.placeholder_glueops_root_domain/api/dex/callback
+      # Accept the edge token minted for the public toolbox Dex client
+      # (GlueOps/toolbox), so the CLI authenticates with the same token that gets
+      # it past oauth2-proxy and no loopback callback is needed.
+      #
+      # This REPLACES the default audience check rather than extending it, so
+      # "argocd" must stay listed or browser UI login breaks for everyone.
+      allowedAudiences:
+        - argocd
+        - toolbox
   rbac:
     # -- A good reference for this is: https://argo-cd.readthedocs.io/en/stable/operator-manual/rbac/
     # This default policy is for GlueOps orgs/teams only. Please change it to reflect your own orgs/teams.
@@ -222,7 +231,7 @@ server:
     # standard annotations for pomerium: https://www.pomerium.com/docs/deploying/k8s/ingress
     # @ignored
     annotations:
-      traefik.ingress.kubernetes.io/router.middlewares: glueops-core-oauth2-proxy-oauth2-with-redirect@kubernetescrd
+      traefik.ingress.kubernetes.io/router.middlewares: glueops-core-oauth2-proxy-oauth2-with-redirect-bearer@kubernetescrd
       traefik.ingress.kubernetes.io/router.entrypoints: websecure
       traefik.ingress.kubernetes.io/router.tls: "true"
       traefik.ingress.kubernetes.io/router.priority: "10"
@@ -244,7 +253,7 @@ extraObjects:
       name: argocd-server-api
       annotations:
         traefik.ingress.kubernetes.io/router.entrypoints: websecure
-        traefik.ingress.kubernetes.io/router.middlewares: glueops-core-oauth2-proxy-oauth2-no-redirect@kubernetescrd
+        traefik.ingress.kubernetes.io/router.middlewares: glueops-core-oauth2-proxy-oauth2-api@kubernetescrd
         traefik.ingress.kubernetes.io/router.priority: "20"
         traefik.ingress.kubernetes.io/router.tls: "true"
     spec:
