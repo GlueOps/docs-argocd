@@ -5,15 +5,6 @@ crds:
 notifications:
   metrics:
     enabled: true
-  affinity:
-    nodeAffinity:
-      requiredDuringSchedulingIgnoredDuringExecution:
-        nodeSelectorTerms:
-        - matchExpressions:
-          - key: "glueops.dev/role"
-            operator: In
-            values:
-            - "glueops-platform"
 
 # @ignored
 global:
@@ -26,6 +17,19 @@ global:
       operator: "Equal"
       value: "glueops-platform"
       effect: "NoSchedule"
+  # Pin every first-party argo-cd component to the glueops-platform nodes from one
+  # place: components without their own affinity inherit this preset; components that
+  # set their own affinity (e.g. controller) override it. The redis-ha subchart and the
+  # gatekeeper extraObject are not reached by global and keep their own settings.
+  affinity:
+    podAntiAffinity: soft
+    nodeAffinity:
+      type: hard
+      matchExpressions:
+        - key: "glueops.dev/role"
+          operator: In
+          values:
+            - "glueops-platform"
   logging:
     format: json
 
@@ -62,6 +66,11 @@ redis-ha:
               values:
               - "glueops-platform"
   enabled: true
+  # nodeSelector applies to the redis-ha server, haproxy, AND the chart's
+  # helm-test pods (which only honor nodeSelector, not additionalAffinities),
+  # keeping every redis-ha pod on the glueops-platform nodes.
+  nodeSelector:
+    glueops.dev/role: "glueops-platform"
   tolerations:
     - key: "glueops.dev/role"
       operator: "Equal"
@@ -122,46 +131,11 @@ repoServer:
   pdb:
     enabled: true
     minAvailable: 2
-  affinity:
-    podAntiAffinity:
-      preferredDuringSchedulingIgnoredDuringExecution:
-      - weight: 100
-        podAffinityTerm:
-          labelSelector:
-            matchLabels:
-              app.kubernetes.io/name: argocd-repo-server
-          topologyKey: kubernetes.io/hostname
-      - weight: 50
-        podAffinityTerm:
-          labelSelector:
-            matchExpressions:
-            - key: app.kubernetes.io/name
-              operator: In
-              values:
-              - argocd-application-controller
-          topologyKey: kubernetes.io/hostname
-    nodeAffinity:
-      requiredDuringSchedulingIgnoredDuringExecution:
-        nodeSelectorTerms:
-        - matchExpressions:
-          - key: "glueops.dev/role"
-            operator: In
-            values:
-            - "glueops-platform"
 # @ignored
 applicationSet:
   metrics:
     enabled: true
   replicas: 2
-  affinity:
-    nodeAffinity:
-      requiredDuringSchedulingIgnoredDuringExecution:
-        nodeSelectorTerms:
-        - matchExpressions:
-          - key: "glueops.dev/role"
-            operator: In
-            values:
-            - "glueops-platform"
 configs:
   params:
     server.insecure: true
@@ -178,7 +152,7 @@ configs:
     application.resourceTrackingMethod: "annotation+label"
     # https://argo-cd.readthedocs.io/en/stable/operator-manual/health/#argocd-app
     # https://github.com/argoproj/argo-cd/issues/3781
-    # enables health check assessment for argocd applications as we are using sync-waves
+    # Application health assessment only takes effect for Applications that are children of another Application (e.g. tenant apps under captain-manifests); the platform chart's own Applications are created by Helm and have no parent.
     # @ignored
     resource.customizations.health.argoproj.io_Application: |
       hs = {}
@@ -232,16 +206,6 @@ configs:
   # @ignored
 server:
   # placeholder_otel_server_extensions
-  # @ignored
-  affinity:
-    nodeAffinity:
-      requiredDuringSchedulingIgnoredDuringExecution:
-        nodeSelectorTerms:
-        - matchExpressions:
-          - key: "glueops.dev/role"
-            operator: In
-            values:
-            - "glueops-platform"
   # @ignored
   metrics:
     enabled: true
@@ -302,105 +266,6 @@ extraObjects:
                     name: argocd-server
                     port:
                       number: 80
-
-  - apiVersion: apiextensions.k8s.io/v1
-    kind: CustomResourceDefinition
-    metadata:
-      name: gates.platform.glueops.dev
-    spec:
-      group: platform.glueops.dev
-      scope: Namespaced
-      names:
-        plural: gates
-        singular: gate
-        kind: Gate
-        shortNames: ["gate"]
-      versions:
-        - name: v1alpha1
-          served: true
-          storage: true
-          subresources:
-            status: {}
-          schema:
-            openAPIV3Schema:
-              type: object
-              required: ["spec"]
-              properties:
-                spec:
-                  type: object
-                  required: ["checks"]
-                  properties:
-                    strict:
-                      type: boolean
-                      default: true
-                      description: "If true, the gate will be marked failed if any checks reference disallowed resource kinds or targets. If false, such checks will be ignored but the gate can still pass if all other checks pass."
-                    checks:
-                      type: array
-                      minItems: 1
-                      items:
-                        type: object
-                        required: ["id"]
-                        properties:
-                          id:
-                            type: string
-                            minLength: 1
-                            maxLength: 63
-                          namespace:
-                            type: string
-                            minLength: 1
-                            maxLength: 63
-                          deploymentAvailable:
-                            type: object
-                            required: ["name"]
-                            properties:
-                              name: { type: string, minLength: 1 }
-                              minAvailableReplicas: { type: integer, minimum: 0, default: 1 }
-                          statefulSetReady:
-                            type: object
-                            required: ["name"]
-                            properties:
-                              name: { type: string, minLength: 1 }
-                              minReadyReplicas: { type: integer, minimum: 0, default: 1 }
-                              requireUpdatedRevision: { type: boolean, default: true }
-                          jobComplete:
-                            type: object
-                            required: ["name"]
-                            properties:
-                              name: { type: string, minLength: 1 }
-                          serviceReadyEndpoints:
-                            type: object
-                            required: ["name"]
-                            properties:
-                              name: { type: string, minLength: 1 }
-                              minReadyAddresses: { type: integer, minimum: 0, default: 1 }
-                          podLabelReady:
-                            type: object
-                            required: ["selector"]
-                            properties:
-                              selector: { type: string, minLength: 1 }
-                              minReadyPods: { type: integer, minimum: 0, default: 1 }
-                          argoApplicationHealthy:
-                            type: object
-                            required: ["name"]
-                            properties:
-                              name: { type: string, minLength: 1 }
-                              requireSynced: { type: boolean, default: true }
-                              requireHealthy: { type: boolean, default: true }
-                status:
-                  type: object
-                  properties:
-                    observedGeneration: { type: integer }
-                    ready: { type: boolean }
-                    lastEvaluatedTime: { type: string, format: date-time }
-                    results:
-                      type: array
-                      items:
-                        type: object
-                        required: ["id", "ready"]
-                        properties:
-                          id: { type: string }
-                          ready: { type: boolean }
-                          message: { type: string }
 
   - apiVersion: v1
     kind: Namespace
