@@ -17,13 +17,10 @@ wget -O argocd.yaml https://raw.githubusercontent.com/GlueOps/docs-argocd/main/a
     - Replace `placeholder_tenant_key` with your tenant/company key. Example: `antoniostacos`
     - Replace `placeholder_cluster_environment` with your cluster_environment name. Example: `nonprod`
     - The `placeholder_argocd_oidc_client_secret_from_dex` that you specify needs to be the same one you use in the `platform.yaml` for ArgoCD. If they do not match you will not be able to login.
-    - OTEL is tenant-overridable through the Terraform module inputs:
-      - `otel_enabled` enables or disables the global ArgoCD OTEL extension for the tenant. The default is `false`, so tenants must opt in explicitly.
-      - `otel_extension_version` sets the GitHub release tag used for the extension tarball.
-      - `otel_backend_tag` sets the OTEL backend API image tag.
-      - `tempo_base_url` sets the in-cluster Tempo endpoint. Leave it empty to disable traces while keeping metrics enabled.
-    - If you are installing from the downloaded `argocd.yaml` directly instead of using Terraform, replace `placeholder_otel_enabled` with `true` or `false` before running Helm. Leave the OTEL placeholder comments in place to keep OTEL disabled, or replace those placeholder comments with concrete OTEL config, RBAC, server extension, and backend object blocks if you want OTEL enabled without Terraform.
-    - The OTEL extension is defined in `argocd.yaml` and loaded by ArgoCD itself, so it is global for all Argo applications without changing app templates.
+    - The OTEL observability extension is **always installed** — there is no enable/disable input. It is defined in `argocd.yaml` and loaded by ArgoCD itself, so it applies to every Argo application without changing app templates.
+      - `otel_extension_version` pins the GitHub release tag of the extension bundle from [GlueOps/argo-cd-ui-extention](https://github.com/GlueOps/argo-cd-ui-extention). Optional; defaults to `v0.1.3-rc2`.
+      - The extension's **backend API is not deployed by this module**. It ships with the GlueOps platform chart as the `glueops-argocd-extension-backend` Application; this module only points `extension.config` at its in-cluster Service.
+    - If you are installing from the downloaded template directly instead of using Terraform, you must substitute every `placeholder_*` yourself. Three of them are *comment lines* whose leading indentation is load-bearing, because the module renders by plain string replacement rather than templating: `placeholder_otel_extension_config`, `placeholder_otel_rbac_policies` and `placeholder_otel_server_extensions`.
 
 - Install ArgoCD
 
@@ -45,17 +42,19 @@ kubectl get pods -n glueops-core
 
 ```hcl
 module "argocd_helm_values" {
-  source                   = "git::https://github.com/GlueOps/docs-argocd.git"
-  tenant_key               = "antoniostacos"
-  cluster_environment      = "nonprod"
-  client_secret            = "Zsbui/29YEqoGOzuI8snlqGcdaRYPSLocwLXDB5GhZY="
-  glueops_root_domain      = "onglueops.com"
-  argocd_app_version       = "v2.8.6"
-  gatekeeper_tag           = "v1.0.0"
-  otel_enabled             = true
-  otel_extension_version   = "v0.1.2"
-  otel_backend_tag         = "v0.1.2"
-  tempo_base_url           = "http://tempo.glueops-core-tempo.svc.cluster.local:3200"
+  source              = "git::https://github.com/GlueOps/docs-argocd.git?ref=v0.20.0"
+  tenant_key          = "antoniostacos"
+  cluster_environment = "nonprod"
+  # Must match the dex client secret used in platform.yaml, or login will fail.
+  client_secret        = "<dex argocd client secret>"
+  glueops_root_domain  = "onglueops.com"
+  argocd_rbac_policies = "      g, glueops-rocks:super_admins, role:admin\n"
+  argocd_app_version   = "v3.2.12"
+  gatekeeper_tag       = "v0.1.1"
+
+  # Optional. Defaults to v0.1.3-rc2. Must be a release that hides the panel when
+  # there is no data; v0.1.2 and earlier render a permanent error box.
+  otel_extension_version = "v0.1.3-rc2"
 }
 
 output "argocd_helm_values" {
