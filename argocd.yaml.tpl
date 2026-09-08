@@ -194,6 +194,23 @@ configs:
       clientID: argocd
       clientSecret: placeholder_argocd_oidc_client_secret_from_dex
       redirectURI: https://argocd.placeholder_cluster_environment.placeholder_tenant_key.placeholder_glueops_root_domain/api/dex/callback
+      # Accept the edge token minted for the public "toolbox" Dex client, which
+      # platform-helm-chart-platform creates on every cluster. GlueOps/toolbox is
+      # the CLI that mints and presents it. One token then satisfies both
+      # oauth2-proxy at the edge and ArgoCD itself, so no loopback callback is
+      # needed -- which is what makes the CLI usable from a machine whose browser
+      # lives somewhere else.
+      #
+      # The CLI must send that token in BOTH headers, because each side reads only
+      # its own: ARGOCD_AUTH_TOKEN becomes "Token:" for ArgoCD, and a separate
+      # "Authorization: Bearer" is what oauth2-proxy reads. Sending only the env
+      # var gets a login redirect the CLI reports as "rpc error: unexpected EOF".
+      #
+      # This REPLACES the default audience check rather than extending it, so
+      # "argocd" must stay listed or browser UI login breaks for everyone.
+      allowedAudiences:
+        - argocd
+        - toolbox
     # placeholder_otel_extension_config
   rbac:
     # -- A good reference for this is: https://argo-cd.readthedocs.io/en/stable/operator-manual/rbac/
@@ -228,7 +245,13 @@ server:
     # standard annotations for pomerium: https://www.pomerium.com/docs/deploying/k8s/ingress
     # @ignored
     annotations:
-      traefik.ingress.kubernetes.io/router.middlewares: glueops-core-oauth2-proxy-oauth2-with-redirect@kubernetescrd
+      # oauth2-with-redirect-bearer and oauth2-api are created by the GlueOps
+      # platform chart, not here. On an UPGRADE, deploy the platform chart before
+      # this one: Traefik drops a router whose middleware does not exist, so
+      # argocd.<domain> answers 404 -- browser UI included -- until the middleware
+      # is there. It is fail-closed, not an auth bypass, and self-heals as soon as
+      # the platform chart lands.
+      traefik.ingress.kubernetes.io/router.middlewares: glueops-core-oauth2-proxy-oauth2-with-redirect-bearer@kubernetescrd
       traefik.ingress.kubernetes.io/router.entrypoints: websecure
       traefik.ingress.kubernetes.io/router.tls: "true"
       traefik.ingress.kubernetes.io/router.priority: "10"
@@ -250,7 +273,7 @@ extraObjects:
       name: argocd-server-api
       annotations:
         traefik.ingress.kubernetes.io/router.entrypoints: websecure
-        traefik.ingress.kubernetes.io/router.middlewares: glueops-core-oauth2-proxy-oauth2-no-redirect@kubernetescrd
+        traefik.ingress.kubernetes.io/router.middlewares: glueops-core-oauth2-proxy-oauth2-api@kubernetescrd
         traefik.ingress.kubernetes.io/router.priority: "20"
         traefik.ingress.kubernetes.io/router.tls: "true"
     spec:

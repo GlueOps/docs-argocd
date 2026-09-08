@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.21.0](https://github.com/GlueOps/docs-argocd/compare/v0.20.0...v0.21.0) (2026-09-05)
+
+
+### Features
+
+* accept the toolbox edge token and route the CLI through bearer-preserving middlewares ([#63](https://github.com/GlueOps/docs-argocd/issues/63)) ([de01b66](https://github.com/GlueOps/docs-argocd/commit/de01b669fdd5a93f65ef5e8fd84580668ccae0dd))
+
 ## [0.20.0](https://github.com/GlueOps/docs-argocd/compare/v0.19.1...v0.20.0) (2026-08-26)
 
 
