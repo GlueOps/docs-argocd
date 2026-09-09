@@ -230,10 +230,17 @@ configs:
     # This default policy is for GlueOps orgs/teams only. Please change it to reflect your own orgs/teams.
     # `development` is the project that all developers are expected to deploy under
     # @default -- `''` (See [values.yaml])
+    # The two extension lines below are wildcarded rather than naming
+    # otel-extension: Argo CD denies extension invocation unless a policy allows
+    # it, and the set of installed extensions is controlled by
+    # server.extensionList in this same file. Naming each one would mean editing
+    # RBAC on every cluster each time an extension is added, which is the
+    # per-cluster churn we are trying to remove. Keep them OUTSIDE any comment --
+    # everything under policy.csv is Casbin policy text, not YAML.
     policy.csv: |
       placeholder_argocd_rbac_policies
-      p, role:readonly, extensions, invoke, otel-extension, allow
-      p, role:admin, extensions, invoke, otel-extension, allow
+      p, role:readonly, extensions, invoke, *, allow
+      p, role:admin, extensions, invoke, *, allow
   # @ignored
 server:
   extensions:
