@@ -72,8 +72,8 @@ variable "gatekeeper_tag" {
 # This module must never deploy a second copy of it.
 variable "otel_extension_version" {
   type        = string
-  description = "GitHub release tag for the ArgoCD OTEL extension tarball. Must be a release that hides the panel when there is no data (v0.1.3-rc1 or newer); v0.1.2 and earlier render a permanent error box. v0.1.3-rc2 additionally stops the panel blanking its links on every Argo CD reconcile."
-  default     = "v0.1.3-rc2"
+  description = "GitHub release tag for the ArgoCD OTEL extension tarball. Must be v0.1.3 or newer: v0.1.2 and earlier render a permanent \"Observability unavailable\" box on every application, and every build before v0.1.3 hid any link category the backend marked degraded -- which is all of them except Config Repo."
+  default     = "v0.1.3"
 
   # The extension is always on, so these are unconditional: an empty or malformed
   # version would render a broken EXTENSION_URL into every cluster's argocd.yaml.

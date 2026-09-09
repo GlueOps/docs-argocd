@@ -18,7 +18,7 @@ wget -O argocd.yaml https://raw.githubusercontent.com/GlueOps/docs-argocd/main/a
     - Replace `placeholder_cluster_environment` with your cluster_environment name. Example: `nonprod`
     - The `placeholder_argocd_oidc_client_secret_from_dex` that you specify needs to be the same one you use in the `platform.yaml` for ArgoCD. If they do not match you will not be able to login.
     - The OTEL observability extension is **always installed** — there is no enable/disable input. It is defined in `argocd.yaml` and loaded by ArgoCD itself, so it applies to every Argo application without changing app templates.
-      - `otel_extension_version` pins the GitHub release tag of the extension bundle from [GlueOps/argo-cd-ui-extention](https://github.com/GlueOps/argo-cd-ui-extention). Optional; defaults to `v0.1.3-rc2`.
+      - `otel_extension_version` pins the GitHub release tag of the extension bundle from [GlueOps/argo-cd-ui-extention](https://github.com/GlueOps/argo-cd-ui-extention). Optional; defaults to `v0.1.3`.
       - The extension's **backend API is not deployed by this module**. It ships with the GlueOps platform chart as the `glueops-argocd-extension-backend` Application; this module only points `extension.config` at its in-cluster Service.
     - If you are installing from the downloaded template directly instead of using Terraform, you must substitute every `placeholder_*` yourself. They are all ordinary scalar values, so `argocd.yaml.tpl` is valid YAML as downloaded. The OTEL extension config, its RBAC policies and its `server.extensions` block are written literally in the template -- only `placeholder_otel_extension_version` and `placeholder_otel_extension_semver` are substituted, and both are plain strings.
 
@@ -52,9 +52,10 @@ module "argocd_helm_values" {
   argocd_app_version   = "v3.2.12"
   gatekeeper_tag       = "v0.1.1"
 
-  # Optional. Defaults to v0.1.3-rc2. Must be a release that hides the panel when
-  # there is no data; v0.1.2 and earlier render a permanent error box.
-  otel_extension_version = "v0.1.3-rc2"
+  # Optional. Defaults to v0.1.3. Must be v0.1.3 or newer: earlier builds either
+  # render a permanent error box (v0.1.2 and below) or hide every link category
+  # the backend marks degraded, leaving only the Config Repo button.
+  otel_extension_version = "v0.1.3"
 }
 
 output "argocd_helm_values" {
