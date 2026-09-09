@@ -85,44 +85,6 @@ locals {
   otel_extension_version_trimmed = trimspace(var.otel_extension_version)
   otel_extension_semver          = trimprefix(local.otel_extension_version_trimmed, "v")
 
-  # The backend Service DNS is the SAME on every cluster: both the Service name and
-  # its namespace are hardcoded constants in platform-helm-chart-platform
-  # (templates/application-argocd-extension-backend.yaml), not derived from
-  # captain_domain or the cluster environment. So there is deliberately nothing
-  # per-cluster to substitute here.
-  #
-  # The namespace is glueops-core-argocd-extension-backend -- the Application's
-  # destination namespace -- NOT glueops-core, which does not resolve.
-  otel_extension_config = join("\n", [
-    "    extension.config: |",
-    "      extensions:",
-    "        - name: otel-extension",
-    "          backend:",
-    "            services:",
-    "              - url: http://argocd-extension-backend-api.glueops-core-argocd-extension-backend.svc.cluster.local:8000",
-  ])
-  otel_rbac_policies = join("\n", [
-    "      p, role:readonly, extensions, invoke, otel-extension, allow",
-    "      p, role:admin, extensions, invoke, otel-extension, allow",
-  ])
-  otel_server_extensions = join("\n", [
-    "  extensions:",
-    "    enabled: true",
-    # The chart defaults this installer image to quay.io directly, unlike every
-    # other image on the platform. Pin it to the gpkg mirror so clusters that
-    # cannot egress to quay.io (or that would hit its rate limits) still start:
-    # this runs as an initContainer on argocd-server, so a failed pull takes the
-    # Argo CD UI down rather than just disabling the extension.
-    "    image:",
-    "      repository: quay.repo.gpkg.io/argoprojlabs/argocd-extension-installer",
-    "    extensionList:",
-    "      - name: otel-extension",
-    "        env:",
-    "          - name: EXTENSION_URL",
-    "            value: \"https://github.com/GlueOps/argo-cd-ui-extention/releases/download/placeholder_otel_extension_version/extension.tar.gz\"",
-    "          - name: EXTENSION_VERSION",
-    "            value: \"placeholder_otel_extension_semver\"",
-  ])
   rendered_argocd_values_tenant = replace(
     data.local_file.argocd_template.content,
     "placeholder_tenant_key",
@@ -165,26 +127,8 @@ locals {
     var.gatekeeper_tag
   )
 
-  rendered_argocd_values_otel_extension_config = replace(
-    local.rendered_argocd_values_gatekeeper,
-    "    # placeholder_otel_extension_config",
-    local.otel_extension_config
-  )
-
-  rendered_argocd_values_otel_rbac = replace(
-    local.rendered_argocd_values_otel_extension_config,
-    "      # placeholder_otel_rbac_policies",
-    local.otel_rbac_policies
-  )
-
-  rendered_argocd_values_otel_server_extensions = replace(
-    local.rendered_argocd_values_otel_rbac,
-    "  # placeholder_otel_server_extensions",
-    local.otel_server_extensions
-  )
-
   rendered_argocd_values_otel_version = replace(
-    local.rendered_argocd_values_otel_server_extensions,
+    local.rendered_argocd_values_gatekeeper,
     "placeholder_otel_extension_version",
     local.otel_extension_version_trimmed
   )

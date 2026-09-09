@@ -20,7 +20,7 @@ wget -O argocd.yaml https://raw.githubusercontent.com/GlueOps/docs-argocd/main/a
     - The OTEL observability extension is **always installed** — there is no enable/disable input. It is defined in `argocd.yaml` and loaded by ArgoCD itself, so it applies to every Argo application without changing app templates.
       - `otel_extension_version` pins the GitHub release tag of the extension bundle from [GlueOps/argo-cd-ui-extention](https://github.com/GlueOps/argo-cd-ui-extention). Optional; defaults to `v0.1.3-rc2`.
       - The extension's **backend API is not deployed by this module**. It ships with the GlueOps platform chart as the `glueops-argocd-extension-backend` Application; this module only points `extension.config` at its in-cluster Service.
-    - If you are installing from the downloaded template directly instead of using Terraform, you must substitute every `placeholder_*` yourself. Three of them are *comment lines* whose leading indentation is load-bearing, because the module renders by plain string replacement rather than templating: `placeholder_otel_extension_config`, `placeholder_otel_rbac_policies` and `placeholder_otel_server_extensions`.
+    - If you are installing from the downloaded template directly instead of using Terraform, you must substitute every `placeholder_*` yourself. They are all ordinary scalar values, so `argocd.yaml.tpl` is valid YAML as downloaded. The OTEL extension config, its RBAC policies and its `server.extensions` block are written literally in the template -- only `placeholder_otel_extension_version` and `placeholder_otel_extension_semver` are substituted, and both are plain strings.
 
 - Install ArgoCD
 

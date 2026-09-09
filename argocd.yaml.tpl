@@ -211,7 +211,20 @@ configs:
       allowedAudiences:
         - argocd
         - toolbox
-    # placeholder_otel_extension_config
+    # The Argo CD OTEL observability extension is always installed -- there is no
+    # enable/disable input. The backend Service DNS is the SAME on every cluster:
+    # both the Service name and its namespace are hardcoded constants in
+    # platform-helm-chart-platform (templates/application-argocd-extension-backend.yaml),
+    # not derived from captain_domain or the cluster environment, so there is
+    # deliberately nothing per-cluster to substitute here. The namespace is
+    # glueops-core-argocd-extension-backend -- the Application's destination
+    # namespace -- NOT glueops-core, which does not resolve.
+    extension.config: |
+      extensions:
+        - name: otel-extension
+          backend:
+            services:
+              - url: http://argocd-extension-backend-api.glueops-core-argocd-extension-backend.svc.cluster.local:8000
   rbac:
     # -- A good reference for this is: https://argo-cd.readthedocs.io/en/stable/operator-manual/rbac/
     # This default policy is for GlueOps orgs/teams only. Please change it to reflect your own orgs/teams.
@@ -219,10 +232,26 @@ configs:
     # @default -- `''` (See [values.yaml])
     policy.csv: |
       placeholder_argocd_rbac_policies
-      # placeholder_otel_rbac_policies
+      p, role:readonly, extensions, invoke, otel-extension, allow
+      p, role:admin, extensions, invoke, otel-extension, allow
   # @ignored
 server:
-  # placeholder_otel_server_extensions
+  extensions:
+    enabled: true
+    # The chart defaults this installer image to quay.io directly, unlike every
+    # other image on the platform. Pin it to the gpkg mirror so clusters that
+    # cannot egress to quay.io (or that would hit its rate limits) still start:
+    # this runs as an initContainer on argocd-server, so a failed pull takes the
+    # Argo CD UI down rather than just disabling the extension.
+    image:
+      repository: quay.repo.gpkg.io/argoprojlabs/argocd-extension-installer
+    extensionList:
+      - name: otel-extension
+        env:
+          - name: EXTENSION_URL
+            value: "https://github.com/GlueOps/argo-cd-ui-extention/releases/download/placeholder_otel_extension_version/extension.tar.gz"
+          - name: EXTENSION_VERSION
+            value: "placeholder_otel_extension_semver"
   # @ignored
   metrics:
     enabled: true
