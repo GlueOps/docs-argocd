@@ -79,80 +79,40 @@ variable "otel_extension_version" {
   type        = string
   description = "GitHub release tag for the ArgoCD OTEL extension tarball. Must be a release that hides the panel when there is no data (v0.1.3-rc1 or newer); v0.1.2 and earlier render a permanent error box. v0.1.3-rc2 additionally stops the panel blanking its links on every Argo CD reconcile."
   default     = "v0.1.3-rc2"
+
+  # The extension is always on, so these are unconditional: an empty or malformed
+  # version would render a broken EXTENSION_URL into every cluster's argocd.yaml.
+  validation {
+    condition     = trimspace(var.otel_extension_version) != ""
+    error_message = "otel_extension_version must be non-empty"
+  }
+
+  validation {
+    condition     = length(regexall("\\s", trimspace(var.otel_extension_version))) == 0
+    error_message = "otel_extension_version must not contain whitespace"
+  }
 }
 
 locals {
   otel_extension_version_trimmed = trimspace(var.otel_extension_version)
   otel_extension_semver          = trimprefix(local.otel_extension_version_trimmed, "v")
-
-  rendered_argocd_values_tenant = replace(
-    data.local_file.argocd_template.content,
-    "placeholder_tenant_key",
-    var.tenant_key
-  )
-
-  rendered_argocd_values_environment = replace(
-    local.rendered_argocd_values_tenant,
-    "placeholder_cluster_environment",
-    var.cluster_environment
-  )
-
-  rendered_argocd_values_secret = replace(
-    local.rendered_argocd_values_environment,
-    "placeholder_argocd_oidc_client_secret_from_dex",
-    var.client_secret
-  )
-
-  rendered_argocd_values_domain = replace(
-    local.rendered_argocd_values_secret,
-    "placeholder_glueops_root_domain",
-    var.glueops_root_domain
-  )
-
-  rendered_argocd_values_rbac = replace(
-    local.rendered_argocd_values_domain,
-    "      placeholder_argocd_rbac_policies",
-    var.argocd_rbac_policies
-  )
-
-  rendered_argocd_values_app_version = replace(
-    local.rendered_argocd_values_rbac,
-    "placeholder_argocd_app_version",
-    var.argocd_app_version
-  )
-
-  rendered_argocd_values_gatekeeper = replace(
-    local.rendered_argocd_values_app_version,
-    "placeholder_gatekeeper_tag",
-    var.gatekeeper_tag
-  )
-
-  rendered_argocd_values_otel_version = replace(
-    local.rendered_argocd_values_gatekeeper,
-    "placeholder_otel_extension_version",
-    local.otel_extension_version_trimmed
-  )
-
-  rendered_argocd_values = replace(
-    local.rendered_argocd_values_otel_version,
-    "placeholder_otel_extension_semver",
-    local.otel_extension_semver
-  )
 }
 
 
 output "helm_values" {
-  value = local.rendered_argocd_values
-
-  # The extension is always on, so these are unconditional: an empty or malformed
-  # version would render a broken EXTENSION_URL into every cluster's argocd.yaml.
-  precondition {
-    condition     = local.otel_extension_version_trimmed != ""
-    error_message = "otel_extension_version must be non-empty"
-  }
-
-  precondition {
-    condition     = length(regexall("\\s", local.otel_extension_version_trimmed)) == 0
-    error_message = "otel_extension_version must not contain whitespace"
-  }
+  value = replace(replace(replace(replace(replace(replace(
+    replace(
+      replace(
+        replace(
+          data.local_file.argocd_template.content,
+        "placeholder_tenant_key", var.tenant_key),
+      "placeholder_cluster_environment", var.cluster_environment),
+    "placeholder_argocd_oidc_client_secret_from_dex", var.client_secret),
+    "placeholder_glueops_root_domain", var.glueops_root_domain),
+    "      placeholder_argocd_rbac_policies", var.argocd_rbac_policies),
+    "placeholder_argocd_app_version", var.argocd_app_version),
+    "placeholder_gatekeeper_tag", var.gatekeeper_tag),
+    "placeholder_otel_extension_version", local.otel_extension_version_trimmed),
+    "placeholder_otel_extension_semver", local.otel_extension_semver
+  )
 }
