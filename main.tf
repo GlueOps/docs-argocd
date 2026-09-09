@@ -3,10 +3,10 @@ terraform {
 
   required_providers {
     http = {
-      source = "hashicorp/http"
+      source  = "hashicorp/http"
     }
     local = {
-      source = "hashicorp/local"
+      source  = "hashicorp/local"
     }
   }
 }
@@ -62,14 +62,9 @@ variable "gatekeeper_tag" {
 # enable/disable switch. That is safe because the frontend renders NOTHING when it
 # has no links to show (see StatusPanel in GlueOps/argo-cd-ui-extention): a cluster
 # whose backend is not up yet shows no panel at all, rather than an error box.
-# That behaviour landed in GlueOps/argo-cd-ui-extention PR #25. Every release cut
-# before it -- v0.1.2 and earlier, and anything built from main until #25 merges --
-# renders a permanent "Observability unavailable" box instead. Shipping one of those
-# always-on would paint that box on every application in every cluster.
-#
-# The default below is deliberately a PRERELEASE: v0.1.3-rc1 is built from that PR's
-# branch and is currently the only published tag with the hide-when-empty behaviour.
-# Once #25 merges, cut a real v0.1.3 from main and bump this default to it.
+# Releases before v0.1.3-rc1 render a permanent "Observability unavailable" box
+# instead, so shipping one of those always-on would paint that box on every
+# application in every cluster.
 #
 # Scope: this module configures the FRONTEND only. The backend (Deployment/Service
 # argocd-extension-backend-api) is owned by platform-helm-chart-platform, which
