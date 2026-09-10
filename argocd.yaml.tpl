@@ -301,10 +301,15 @@ server:
     extensionList:
       - name: otel-extension
         env:
+          # EXTENSION_URL is the only input the installer actually uses. It also
+          # sets EXTENSION_VERSION in upstream's docs, but v0.0.9's install.sh
+          # assigns ext_version once (line 100) and never reads it again -- the
+          # tarball URL determines everything. Verified by installing v0.1.5 with
+          # the variable omitted: same file, same md5 (56b8f0b9...), same 8038
+          # bytes, exit 0, no warning. Re-check this if the installer image above
+          # is ever bumped.
           - name: EXTENSION_URL
             value: "https://github.com/GlueOps/argo-cd-ui-extention/releases/download/placeholder_otel_extension_version/extension.tar.gz"
-          - name: EXTENSION_VERSION
-            value: "placeholder_otel_extension_semver"
   # @ignored
   metrics:
     enabled: true

@@ -3,10 +3,10 @@ terraform {
 
   required_providers {
     http = {
-      source  = "hashicorp/http"
+      source = "hashicorp/http"
     }
     local = {
-      source  = "hashicorp/local"
+      source = "hashicorp/local"
     }
   }
 }
@@ -90,12 +90,11 @@ variable "otel_extension_version" {
 
 locals {
   otel_extension_version_trimmed = trimspace(var.otel_extension_version)
-  otel_extension_semver          = trimprefix(local.otel_extension_version_trimmed, "v")
 }
 
 
 output "helm_values" {
-  value = replace(replace(replace(replace(replace(replace(
+  value = replace(replace(replace(replace(replace(
     replace(
       replace(
         replace(
@@ -107,7 +106,6 @@ output "helm_values" {
     "      placeholder_argocd_rbac_policies", var.argocd_rbac_policies),
     "placeholder_argocd_app_version", var.argocd_app_version),
     "placeholder_gatekeeper_tag", var.gatekeeper_tag),
-    "placeholder_otel_extension_version", local.otel_extension_version_trimmed),
-    "placeholder_otel_extension_semver", local.otel_extension_semver
+    "placeholder_otel_extension_version", local.otel_extension_version_trimmed
   )
 }
