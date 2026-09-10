@@ -237,6 +237,14 @@ configs:
     # RBAC on every cluster each time an extension is added, which is the
     # per-cluster churn we are trying to remove. Keep them OUTSIDE any comment --
     # everything under policy.csv is Casbin policy text, not YAML.
+    #
+    # The ROLE cannot be wildcarded -- only the object can. Argo CD's Casbin
+    # matcher resolves the subject with g(r.sub, p.sub), a group lookup, while
+    # resource/action/object go through globMatch. So `*` in the subject is a
+    # literal name that matches nobody. Verified with `argocd admin settings rbac
+    # can` against v3.2.12: with `p, role:*, ...` both role:readonly and
+    # role:admin answer No, and with a bare `p, *, ...` so does a real user; with
+    # the two lines below both answer Yes, as does a user mapped in via `g,`.
     policy.csv: |
       placeholder_argocd_rbac_policies
       p, role:readonly, extensions, invoke, *, allow
@@ -247,9 +255,23 @@ server:
     enabled: true
     # The chart defaults this installer image to quay.io directly, unlike every
     # other image on the platform. Pin it to the gpkg mirror so clusters that
-    # cannot egress to quay.io (or that would hit its rate limits) still start:
-    # this runs as an initContainer on argocd-server, so a failed pull takes the
-    # Argo CD UI down rather than just disabling the extension.
+    # cannot egress to quay.io (or would hit its rate limits) still start.
+    #
+    # Two failure modes, and only one is fatal -- both tested against
+    # argocd-extension-installer:v0.0.9 in a throwaway pod:
+    #
+    #   IMAGE PULL failure IS fatal. The initContainer never starts, so
+    #   argocd-server never starts, and the Argo CD UI is down with no Argo CD
+    #   available to fix it. That is why the mirror pin above matters.
+    #
+    #   DOWNLOAD failure is NOT fatal. A nonexistent domain (curl exit 6) and a
+    #   404 from a bad tag (curl exit 22) both leave the initContainer exiting 0
+    #   and argocd-server starting normally with an empty /tmp/extensions -- the
+    #   panel simply never appears. The installer's EXIT trap runs `rm -rf` on
+    #   its temp dir and then reads $?, which by then reports the rm rather than
+    #   the curl, so the real exit code is masked. Do not rely on a bad
+    #   EXTENSION_URL being caught here: nothing will alert, the extension will
+    #   just be silently absent.
     image:
       repository: quay.repo.gpkg.io/argoprojlabs/argocd-extension-installer
     extensionList:
