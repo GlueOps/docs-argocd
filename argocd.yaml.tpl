@@ -230,25 +230,42 @@ configs:
     # This default policy is for GlueOps orgs/teams only. Please change it to reflect your own orgs/teams.
     # `development` is the project that all developers are expected to deploy under
     # @default -- `''` (See [values.yaml])
-    # The two extension lines below are wildcarded rather than naming
-    # otel-extension: Argo CD denies extension invocation unless a policy allows
-    # it, and the set of installed extensions is controlled by
-    # server.extensionList in this same file. Naming each one would mean editing
-    # RBAC on every cluster each time an extension is added, which is the
-    # per-cluster churn we are trying to remove. Keep them OUTSIDE any comment --
-    # everything under policy.csv is Casbin policy text, not YAML.
+    # Extension invocation is denied unless a policy allows it. These are
+    # deliberately scoped to the otel-extension object and to role:admin and
+    # role:readonly -- narrow on purpose, so adding an extension is a conscious
+    # RBAC decision rather than something a wildcard grants silently. Adding a
+    # second extension therefore needs a line here.
     #
-    # The ROLE cannot be wildcarded -- only the object can. Argo CD's Casbin
-    # matcher resolves the subject with g(r.sub, p.sub), a group lookup, while
-    # resource/action/object go through globMatch. So `*` in the subject is a
-    # literal name that matches nobody. Verified with `argocd admin settings rbac
-    # can` against v3.2.12: with `p, role:*, ...` both role:readonly and
-    # role:admin answer No, and with a bare `p, *, ...` so does a real user; with
-    # the two lines below both answer Yes, as does a user mapped in via `g,`.
+    # Keep them OUTSIDE any comment: everything under policy.csv is Casbin
+    # policy text, not YAML.
+    #
+    # The ROLE cannot be wildcarded even if you wanted to -- only the object can.
+    # Argo CD resolves the subject with g(r.sub, p.sub), a group lookup, while
+    # resource/action/object go through globMatch, so `*` in the subject is a
+    # literal name matching nobody. Verified with `argocd admin settings rbac
+    # can` on v3.2.12: `p, role:*, ...` and a bare `p, *, ...` both answer No for
+    # role:readonly, role:admin and a real user; the two lines below answer Yes,
+    # as does a user mapped in via `g,`.
+    #
+    # Only Argo CD BUILT-IN roles are referenced here on purpose. This template
+    # is the same on every cluster, while the roles above it come from each
+    # tenant's own argocd_rbac_policies -- venus defines just one group->admin
+    # mapping, another tenant may define several -- so a custom role named here
+    # would be dangling wherever that tenant does not define it.
+    #
+    # Consequence: a user holding neither built-in role cannot invoke the
+    # extension, and since v0.1.3 the panel renders nothing rather than an error,
+    # so there is no on-screen hint that RBAC is why. The intended fix is
+    # `policy.default: role:readonly` (not set today), rolled out with the OTel
+    # stack, which gives every authenticated user the readonly role. Verified
+    # with `argocd admin settings rbac can --default-role role:readonly`: an
+    # arbitrary user goes from No to Yes for the extension, still No for
+    # `delete applications`, and Yes for `get applications` -- so it widens read
+    # access to Argo CD generally, not just to this panel.
     policy.csv: |
       placeholder_argocd_rbac_policies
-      p, role:readonly, extensions, invoke, *, allow
-      p, role:admin, extensions, invoke, *, allow
+      p, role:readonly, extensions, invoke, otel-extension, allow
+      p, role:admin, extensions, invoke, otel-extension, allow
   # @ignored
 server:
   extensions:
@@ -264,14 +281,21 @@ server:
     #   argocd-server never starts, and the Argo CD UI is down with no Argo CD
     #   available to fix it. That is why the mirror pin above matters.
     #
-    #   DOWNLOAD failure is NOT fatal. A nonexistent domain (curl exit 6) and a
-    #   404 from a bad tag (curl exit 22) both leave the initContainer exiting 0
-    #   and argocd-server starting normally with an empty /tmp/extensions -- the
-    #   panel simply never appears. The installer's EXIT trap runs `rm -rf` on
-    #   its temp dir and then reads $?, which by then reports the rm rather than
-    #   the curl, so the real exit code is masked. Do not rely on a bad
-    #   EXTENSION_URL being caught here: nothing will alert, the extension will
-    #   just be silently absent.
+    #   DOWNLOAD failure is NOT fatal, in any of its three forms. A nonexistent
+    #   domain (curl 6), a 404 from a bad tag (curl 22), and an unreachable host
+    #   that hangs until the timeout (curl 28) all leave the initContainer
+    #   exiting 0 and argocd-server starting normally with an empty
+    #   /tmp/extensions -- the panel simply never appears. The installer's EXIT
+    #   trap runs `rm -rf` on its temp dir and then reads $?, which by then
+    #   reports the rm rather than the curl, so the real exit code is masked. Do
+    #   not rely on a bad EXTENSION_URL being caught here: nothing alerts, the
+    #   extension is just silently absent.
+    #
+    #   Cost of the hanging case: curl's --max-time is 30s, so an unreachable
+    #   host adds exactly 30s to EVERY argocd-server pod start (measured). That
+    #   is bounded and considered acceptable. It is tunable if it ever is not --
+    #   install.sh reads `download_max_sec="${MAX_DOWNLOAD_SEC:-30}"`, so adding
+    #   MAX_DOWNLOAD_SEC to the env below changes it (verified: 5 -> 5.0s).
     image:
       repository: quay.repo.gpkg.io/argoprojlabs/argocd-extension-installer
     extensionList:
