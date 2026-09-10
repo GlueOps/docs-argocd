@@ -20,7 +20,7 @@ wget -O argocd.yaml https://raw.githubusercontent.com/GlueOps/docs-argocd/main/a
     - The OTEL observability extension is **always installed** — there is no enable/disable input. It is defined in `argocd.yaml` and loaded by ArgoCD itself, so it applies to every Argo application without changing app templates.
       - `otel_extension_version` pins the GitHub release tag of the extension bundle from [GlueOps/argo-cd-ui-extention](https://github.com/GlueOps/argo-cd-ui-extention). Optional; defaults to `v0.1.5`.
       - The extension's **backend API is not deployed by this module**. It ships with the GlueOps platform chart as the `glueops-argocd-extension-backend` Application; this module only points `extension.config` at its in-cluster Service.
-    - If you are installing from the downloaded template directly instead of using Terraform, you must substitute every `placeholder_*` yourself. They are all ordinary scalar values, so `argocd.yaml.tpl` is valid YAML as downloaded. The OTEL extension config, its RBAC policies and its `server.extensions` block are written literally in the template -- only `placeholder_otel_extension_version` and `placeholder_otel_extension_semver` are substituted, and both are plain strings.
+    - If you are installing from the downloaded template directly instead of using Terraform, you must substitute every `placeholder_*` yourself. They are all ordinary scalar values, so `argocd.yaml.tpl` is valid YAML as downloaded. The OTEL extension config, its RBAC policies and its `server.extensions` block are written literally in the template -- only `placeholder_otel_extension_version` is substituted, and it is a plain string.
 
 - Install ArgoCD
 
@@ -52,9 +52,11 @@ module "argocd_helm_values" {
   argocd_app_version   = "v3.2.12"
   gatekeeper_tag       = "v0.1.1"
 
-  # Optional. Defaults to v0.1.5. Must be v0.1.3 or newer: earlier builds either
-  # render a permanent error box (v0.1.2 and below) or hide every link category
-  # the backend marks degraded, leaving only the Config Repo button.
+  # Optional. Defaults to v0.1.5, which is also the recommended floor: the
+  # extension is installed on every cluster, and only v0.1.5+ renders nothing
+  # when there is no backend. v0.1.3/v0.1.4 draw an empty bordered panel instead,
+  # and v0.1.2 and below draw a permanent "Observability unavailable" box on
+  # every application.
   otel_extension_version = "v0.1.5"
 }
 
