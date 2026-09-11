@@ -139,8 +139,6 @@ applicationSet:
 configs:
   params:
     server.insecure: true
-    # Always true: the OTEL extension ships to every cluster. Required for
-    # argocd-server to proxy the extension's calls to its backend.
     server.enable.proxy.extension: true
   cm:
     # @ignored
@@ -211,14 +209,8 @@ configs:
       allowedAudiences:
         - argocd
         - toolbox
-    # The Argo CD OTEL observability extension is always installed -- there is no
-    # enable/disable input. The backend Service DNS is the SAME on every cluster:
-    # both the Service name and its namespace are hardcoded constants in
-    # platform-helm-chart-platform (templates/application-argocd-extension-backend.yaml),
-    # not derived from captain_domain or the cluster environment, so there is
-    # deliberately nothing per-cluster to substitute here. The namespace is
-    # glueops-core-argocd-extension-backend -- the Application's destination
-    # namespace -- NOT glueops-core, which does not resolve.
+    # The backend Service name and namespace are fixed constants in
+    # platform-helm-chart-platform; nothing here is per-cluster.
     extension.config: |
       extensions:
         - name: otel-extension
@@ -230,38 +222,9 @@ configs:
     # This default policy is for GlueOps orgs/teams only. Please change it to reflect your own orgs/teams.
     # `development` is the project that all developers are expected to deploy under
     # @default -- `''` (See [values.yaml])
-    # Extension invocation is denied unless a policy allows it. These are
-    # deliberately scoped to the otel-extension object and to role:admin and
-    # role:readonly -- narrow on purpose, so adding an extension is a conscious
-    # RBAC decision rather than something a wildcard grants silently. Adding a
-    # second extension therefore needs a line here.
-    #
-    # Keep them OUTSIDE any comment: everything under policy.csv is Casbin
-    # policy text, not YAML.
-    #
-    # The ROLE cannot be wildcarded even if you wanted to -- only the object can.
-    # Argo CD resolves the subject with g(r.sub, p.sub), a group lookup, while
-    # resource/action/object go through globMatch, so `*` in the subject is a
-    # literal name matching nobody. Verified with `argocd admin settings rbac
-    # can` on v3.2.12: `p, role:*, ...` and a bare `p, *, ...` both answer No for
-    # role:readonly, role:admin and a real user; the two lines below answer Yes,
-    # as does a user mapped in via `g,`.
-    #
-    # Only Argo CD BUILT-IN roles are referenced here on purpose. This template
-    # is the same on every cluster, while the roles above it come from each
-    # tenant's own argocd_rbac_policies -- venus defines just one group->admin
-    # mapping, another tenant may define several -- so a custom role named here
-    # would be dangling wherever that tenant does not define it.
-    #
-    # Consequence: a user holding neither built-in role cannot invoke the
-    # extension, and since v0.1.3 the panel renders nothing rather than an error,
-    # so there is no on-screen hint that RBAC is why. The intended fix is
-    # `policy.default: role:readonly` (not set today), rolled out with the OTel
-    # stack, which gives every authenticated user the readonly role. Verified
-    # with `argocd admin settings rbac can --default-role role:readonly`: an
-    # arbitrary user goes from No to Yes for the extension, still No for
-    # `delete applications`, and Yes for `get applications` -- so it widens read
-    # access to Argo CD generally, not just to this panel.
+    # Extensions are denied unless a policy allows them. Only Argo CD built-in
+    # roles are referenced: custom roles come from each tenant's own
+    # argocd_rbac_policies, so naming one here would dangle on other clusters.
     policy.csv: |
       placeholder_argocd_rbac_policies
       p, role:readonly, extensions, invoke, otel-extension, allow
@@ -270,44 +233,13 @@ configs:
 server:
   extensions:
     enabled: true
-    # The chart defaults this installer image to quay.io directly, unlike every
-    # other image on the platform. Pin it to the gpkg mirror so clusters that
-    # cannot egress to quay.io (or would hit its rate limits) still start.
-    #
-    # Two failure modes, and only one is fatal -- both tested against
-    # argocd-extension-installer:v0.0.9 in a throwaway pod:
-    #
-    #   IMAGE PULL failure IS fatal. The initContainer never starts, so
-    #   argocd-server never starts, and the Argo CD UI is down with no Argo CD
-    #   available to fix it. That is why the mirror pin above matters.
-    #
-    #   DOWNLOAD failure is NOT fatal, in any of its three forms. A nonexistent
-    #   domain (curl 6), a 404 from a bad tag (curl 22), and an unreachable host
-    #   that hangs until the timeout (curl 28) all leave the initContainer
-    #   exiting 0 and argocd-server starting normally with an empty
-    #   /tmp/extensions -- the panel simply never appears. The installer's EXIT
-    #   trap runs `rm -rf` on its temp dir and then reads $?, which by then
-    #   reports the rm rather than the curl, so the real exit code is masked. Do
-    #   not rely on a bad EXTENSION_URL being caught here: nothing alerts, the
-    #   extension is just silently absent.
-    #
-    #   Cost of the hanging case: curl's --max-time is 30s, so an unreachable
-    #   host adds exactly 30s to EVERY argocd-server pod start (measured). That
-    #   is bounded and considered acceptable. It is tunable if it ever is not --
-    #   install.sh reads `download_max_sec="${MAX_DOWNLOAD_SEC:-30}"`, so adding
-    #   MAX_DOWNLOAD_SEC to the env below changes it (verified: 5 -> 5.0s).
+    # Pinned to the gpkg mirror: the chart defaults this installer image to
+    # quay.io, and a pull failure blocks argocd-server from starting at all.
     image:
       repository: quay.repo.gpkg.io/argoprojlabs/argocd-extension-installer
     extensionList:
       - name: otel-extension
         env:
-          # EXTENSION_URL is the only input the installer actually uses. It also
-          # sets EXTENSION_VERSION in upstream's docs, but v0.0.9's install.sh
-          # assigns ext_version once (line 100) and never reads it again -- the
-          # tarball URL determines everything. Verified by installing v0.1.5 with
-          # the variable omitted: same file, same md5 (56b8f0b9...), same 8038
-          # bytes, exit 0, no warning. Re-check this if the installer image above
-          # is ever bumped.
           - name: EXTENSION_URL
             value: "https://github.com/GlueOps/argo-cd-ui-extention/releases/download/placeholder_otel_extension_version/extension.tar.gz"
   # @ignored

@@ -52,11 +52,7 @@ module "argocd_helm_values" {
   argocd_app_version   = "v3.2.12"
   gatekeeper_tag       = "v0.1.1"
 
-  # Optional. Defaults to v0.1.5, which is also the recommended floor: the
-  # extension is installed on every cluster, and only v0.1.5+ renders nothing
-  # when there is no backend. v0.1.3/v0.1.4 draw an empty bordered panel instead,
-  # and v0.1.2 and below draw a permanent "Observability unavailable" box on
-  # every application.
+  # Optional. Defaults to v0.1.5.
   otel_extension_version = "v0.1.5"
 }
 
