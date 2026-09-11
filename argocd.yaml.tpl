@@ -139,6 +139,7 @@ applicationSet:
 configs:
   params:
     server.insecure: true
+    server.enable.proxy.extension: true
   cm:
     # @ignored
     timeout.reconciliation: 10s
@@ -208,15 +209,39 @@ configs:
       allowedAudiences:
         - argocd
         - toolbox
+    # The backend Service name and namespace are fixed constants in
+    # platform-helm-chart-platform; nothing here is per-cluster.
+    extension.config: |
+      extensions:
+        - name: otel-extension
+          backend:
+            services:
+              - url: http://argocd-extension-backend-api.glueops-core-argocd-extension-backend.svc.cluster.local:8000
   rbac:
     # -- A good reference for this is: https://argo-cd.readthedocs.io/en/stable/operator-manual/rbac/
     # This default policy is for GlueOps orgs/teams only. Please change it to reflect your own orgs/teams.
     # `development` is the project that all developers are expected to deploy under
     # @default -- `''` (See [values.yaml])
+    # Extensions are denied unless a policy allows them. Only Argo CD built-in
+    # roles are referenced: custom roles come from each tenant's own
+    # argocd_rbac_policies, so naming one here would dangle on other clusters.
     policy.csv: |
       placeholder_argocd_rbac_policies
+      p, role:readonly, extensions, invoke, otel-extension, allow
+      p, role:admin, extensions, invoke, otel-extension, allow
   # @ignored
 server:
+  extensions:
+    enabled: true
+    # Pinned to the gpkg mirror: the chart defaults this installer image to
+    # quay.io, and a pull failure blocks argocd-server from starting at all.
+    image:
+      repository: quay.repo.gpkg.io/argoprojlabs/argocd-extension-installer
+    extensionList:
+      - name: otel-extension
+        env:
+          - name: EXTENSION_URL
+            value: "https://github.com/GlueOps/argo-cd-ui-extention/releases/download/placeholder_otel_extension_version/extension.tar.gz"
   # @ignored
   metrics:
     enabled: true

@@ -1,10 +1,12 @@
 terraform {
+  required_version = ">= 1.2.0"
+
   required_providers {
     http = {
-      source  = "hashicorp/http"
+      source = "hashicorp/http"
     }
     local = {
-      source  = "hashicorp/local"
+      source = "hashicorp/local"
     }
   }
 }
@@ -56,18 +58,49 @@ variable "gatekeeper_tag" {
   description = "Image tag (SHA or semver) for ghcr.repo.gpkg.io/glueops/gatekeeper.platform.glueops.dev"
 }
 
+# The OTEL extension frontend is always on, for every cluster -- there is no
+# enable/disable switch. That is safe because the frontend renders NOTHING when it
+# has no links to show (see StatusPanel in GlueOps/argo-cd-ui-extention): a cluster
+# whose backend is not up yet shows no panel at all, rather than an error box.
+#
+# Scope: this module configures the FRONTEND only. The backend (Deployment/Service
+# argocd-extension-backend-api) is owned by platform-helm-chart-platform, which
+# deploys it as an Argo CD Application into glueops-core-argocd-extension-backend.
+# This module must never deploy a second copy of it.
+variable "otel_extension_version" {
+  type        = string
+  description = "GitHub release tag for the ArgoCD OTEL extension tarball."
+  default     = "v0.1.5"
+
+  validation {
+    condition     = trimspace(var.otel_extension_version) != ""
+    error_message = "otel_extension_version must be non-empty"
+  }
+
+  validation {
+    condition     = length(regexall("\\s", trimspace(var.otel_extension_version))) == 0
+    error_message = "otel_extension_version must not contain whitespace"
+  }
+}
+
+locals {
+  otel_extension_version_trimmed = trimspace(var.otel_extension_version)
+}
+
 
 output "helm_values" {
   value = replace(replace(replace(replace(replace(
     replace(
       replace(
-        data.local_file.argocd_template.content,
-      "placeholder_tenant_key", var.tenant_key),
+        replace(
+          data.local_file.argocd_template.content,
+        "placeholder_tenant_key", var.tenant_key),
       "placeholder_cluster_environment", var.cluster_environment),
-      "placeholder_argocd_oidc_client_secret_from_dex", var.client_secret),
-      "placeholder_glueops_root_domain", var.glueops_root_domain),
-      "      placeholder_argocd_rbac_policies", var.argocd_rbac_policies),
-      "placeholder_argocd_app_version", var.argocd_app_version),
-    "placeholder_gatekeeper_tag", var.gatekeeper_tag
+    "placeholder_argocd_oidc_client_secret_from_dex", var.client_secret),
+    "placeholder_glueops_root_domain", var.glueops_root_domain),
+    "      placeholder_argocd_rbac_policies", var.argocd_rbac_policies),
+    "placeholder_argocd_app_version", var.argocd_app_version),
+    "placeholder_gatekeeper_tag", var.gatekeeper_tag),
+    "placeholder_otel_extension_version", local.otel_extension_version_trimmed
   )
 }
