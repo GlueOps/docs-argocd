@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.22.0](https://github.com/GlueOps/docs-argocd/compare/v0.21.0...v0.22.0) (2026-09-11)
+
+
+### Features
+
+* install the Argo CD OTEL UI extension on every cluster ([#53](https://github.com/GlueOps/docs-argocd/issues/53)) ([45a0911](https://github.com/GlueOps/docs-argocd/commit/45a091110d77ecd01db7eb94c114ad07ec051b33))
+
 ## [0.21.0](https://github.com/GlueOps/docs-argocd/compare/v0.20.0...v0.21.0) (2026-09-05)
 
 
