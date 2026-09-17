@@ -243,7 +243,7 @@ server:
       - name: otel-extension
         env:
           - name: EXTENSION_URL
-            value: "https://github.com/GlueOps/argo-cd-ui-extention/releases/download/placeholder_otel_extension_version/extension.tar.gz"
+            value: "https://repo.gpkg.io/repository/raw-github/GlueOps/argo-cd-ui-extention/releases/download/placeholder_otel_extension_version/extension.tar.gz"
           - name: IGNORE_FAILURE
             value: "true"
   # @ignored
