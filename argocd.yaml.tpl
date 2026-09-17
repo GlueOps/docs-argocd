@@ -9,6 +9,12 @@ notifications:
 # @ignored
 global:
   domain: "argocd.placeholder_cluster_environment.placeholder_tenant_key.placeholder_glueops_root_domain"
+  # Chart >= 10.0.0 (GHSA-47m3-95c7-g2g8) renders NetworkPolicies for every component:
+  # argocd-server allows all ingress; the controllers allow only :metrics from any
+  # namespace; argocd-repo-server:8081 is reachable ONLY from the argocd-* pods in this
+  # namespace; redis-ha gets no policy. Explicit here so a chart bump cannot flip it silently.
+  networkPolicy:
+    create: true
   image:
     repository: "quay.repo.gpkg.io/argoproj/argocd"
     tag: "placeholder_argocd_app_version"
@@ -242,6 +248,11 @@ server:
         env:
           - name: EXTENSION_URL
             value: "https://github.com/GlueOps/argo-cd-ui-extention/releases/download/placeholder_otel_extension_version/extension.tar.gz"
+          # Installer >= v1.0.0 (chart >= 9.4.18) exits non-zero when the tarball download
+          # fails, which blocks argocd-server from starting. Keep the pre-v1 fail-open
+          # behaviour: a missing extension just renders nothing in the UI.
+          - name: IGNORE_FAILURE
+            value: "true"
   # @ignored
   metrics:
     enabled: true
@@ -279,10 +290,8 @@ server:
       #nginx.ingress.kubernetes.io/auth-url: "https://oauth2.placeholder_cluster_environment.placeholder_tenant_key.placeholder_glueops_root_domain/oauth2/auth"
       #nginx.ingress.kubernetes.io/auth-response-headers: "x-auth-request-user, x-auth-request-email, authorization"
     
-    hosts:
-      - argocd.placeholder_cluster_environment.placeholder_tenant_key.placeholder_glueops_root_domain
-    paths:
-      - /
+    # host comes from global.domain and the path defaults to "/": server.ingress.hosts and
+    # server.ingress.paths were removed in chart 6.0.0 and had been ignored since.
 
 
 extraObjects:

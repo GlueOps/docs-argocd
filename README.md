@@ -25,9 +25,11 @@ wget -O argocd.yaml https://raw.githubusercontent.com/GlueOps/docs-argocd/main/a
 - Install ArgoCD
 
 ```bash
-kubectl apply -k "https://github.com/argoproj/argo-cd/tree/v2.8.6/manifests/crds" # You need to install the CRD's that match the version of the app in the helm chart.
+# CRDs are shipped by GlueOps/platform-crds (glueops.dev/pin.argo-cd) and MUST be applied server-side:
+# the ApplicationSet CRD exceeds the client-side-apply annotation limit since Argo CD 3.3.
+kubectl apply --server-side --force-conflicts -k "https://github.com/argoproj/argo-cd/manifests/crds?ref=v3.4.9"
 helm repo add argo https://argoproj.github.io/argo-helm # Adds the argo helm repository to your local environment
-helm install argocd argo/argo-cd --skip-crds --version 5.50.0 -f argocd.yaml --namespace=glueops-core --create-namespace #this command includes --skip-crds but the way the chart works we also have a value we need to set to false so that the CRD's do not work. This value is in the argocd.yaml
+helm install argocd argo/argo-cd --skip-crds --version 10.2.2 -f argocd.yaml --namespace=glueops-core --create-namespace #this command includes --skip-crds but the way the chart works we also have a value we need to set to false so that the CRD's do not work. This value is in the argocd.yaml
 ```
 
 - Check to see if all ArgoCD pods are in a good state with: 
@@ -49,7 +51,7 @@ module "argocd_helm_values" {
   client_secret        = "<dex argocd client secret>"
   glueops_root_domain  = "onglueops.com"
   argocd_rbac_policies = "      g, glueops-rocks:super_admins, role:admin\n"
-  argocd_app_version   = "v3.2.12"
+  argocd_app_version   = "v3.4.9"
   gatekeeper_tag       = "v0.1.1"
 
   # Optional. Defaults to v0.1.5.
