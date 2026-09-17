@@ -25,8 +25,6 @@ wget -O argocd.yaml https://raw.githubusercontent.com/GlueOps/docs-argocd/main/a
 - Install ArgoCD
 
 ```bash
-# CRDs are shipped by GlueOps/platform-crds (glueops.dev/pin.argo-cd) and MUST be applied server-side:
-# the ApplicationSet CRD exceeds the client-side-apply annotation limit since Argo CD 3.3.
 kubectl apply --server-side --force-conflicts -k "https://github.com/argoproj/argo-cd/manifests/crds?ref=v3.4.9"
 helm repo add argo https://argoproj.github.io/argo-helm # Adds the argo helm repository to your local environment
 helm install argocd argo/argo-cd --skip-crds --version 10.2.2 -f argocd.yaml --namespace=glueops-core --create-namespace #this command includes --skip-crds but the way the chart works we also have a value we need to set to false so that the CRD's do not work. This value is in the argocd.yaml
