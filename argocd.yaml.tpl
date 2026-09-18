@@ -9,8 +9,26 @@ notifications:
 # @ignored
 global:
   domain: "argocd.placeholder_cluster_environment.placeholder_tenant_key.placeholder_glueops_root_domain"
+  # Kept off deliberately. argo-helm chart 10.0.0 flipped this default from false to
+  # true (changelog: "Enable network policies for all components by default"), which
+  # adds a NetworkPolicy per component. Each one sets policyTypes: [Ingress], so it
+  # flips that pod to default-deny and only re-opens what it lists — and the metrics
+  # rules are written as `from: [{namespaceSelector: {}}]` with the port referenced by
+  # NAME. On a GlueOps cluster those rules do not take effect, so kube-prometheus-stack
+  # loses the application-controller (8082), repo-server (8084), applicationset (8080)
+  # and notifications (9001) scrape targets: verified on a live cluster, 7 targets down,
+  # and all 7 recovered the moment these policies were removed with no pod restart.
+  # Losing them means no alerting on sync failures or controller health.
+  #
+  # Chart 9.3.7 (the version before this one) defaulted to false, so this restores the
+  # behaviour every existing cluster already runs rather than changing it. Re-enabling
+  # is worth doing as its own change: repo-server's rule is the one with real value
+  # (it restricts port 8081 - which holds repo credentials and executes rendering - to
+  # the four argo-cd components), so the shape to aim for is create: true plus a
+  # supplemental allow-policy for the metrics ports BY NUMBER, with scrape targets
+  # verified before rollout.
   networkPolicy:
-    create: true
+    create: false
   image:
     repository: "quay.repo.gpkg.io/argoproj/argocd"
     tag: "placeholder_argocd_app_version"
