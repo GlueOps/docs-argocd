@@ -9,6 +9,8 @@ notifications:
 # @ignored
 global:
   domain: "argocd.placeholder_cluster_environment.placeholder_tenant_key.placeholder_glueops_root_domain"
+  networkPolicy:
+    create: true
   image:
     repository: "quay.repo.gpkg.io/argoproj/argocd"
     tag: "placeholder_argocd_app_version"
@@ -241,7 +243,9 @@ server:
       - name: otel-extension
         env:
           - name: EXTENSION_URL
-            value: "https://github.com/GlueOps/argo-cd-ui-extention/releases/download/placeholder_otel_extension_version/extension.tar.gz"
+            value: "https://repo.gpkg.io/repository/raw-github/GlueOps/argo-cd-ui-extention/releases/download/placeholder_otel_extension_version/extension.tar.gz"
+          - name: IGNORE_FAILURE
+            value: "true"
   # @ignored
   metrics:
     enabled: true
@@ -279,10 +283,6 @@ server:
       #nginx.ingress.kubernetes.io/auth-url: "https://oauth2.placeholder_cluster_environment.placeholder_tenant_key.placeholder_glueops_root_domain/oauth2/auth"
       #nginx.ingress.kubernetes.io/auth-response-headers: "x-auth-request-user, x-auth-request-email, authorization"
     
-    hosts:
-      - argocd.placeholder_cluster_environment.placeholder_tenant_key.placeholder_glueops_root_domain
-    paths:
-      - /
 
 
 extraObjects:
