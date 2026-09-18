@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.23.1](https://github.com/GlueOps/docs-argocd/compare/v0.23.0...v0.23.1) (2026-09-18)
+
+
+### Bug Fixes
+
+* disable argo-helm 10.x default NetworkPolicies ([#69](https://github.com/GlueOps/docs-argocd/issues/69)) ([2033176](https://github.com/GlueOps/docs-argocd/commit/203317604ad42ae29e43617fb16abd45a7015df7))
+
 ## [0.23.0](https://github.com/GlueOps/docs-argocd/compare/v0.22.0...v0.23.0) (2026-09-18)
 
 
