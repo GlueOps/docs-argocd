@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.23.0](https://github.com/GlueOps/docs-argocd/compare/v0.22.0...v0.23.0) (2026-09-18)
+
+
+### Features
+
+* prepare the values for Argo CD v3.4.9 on argo-helm chart 10.2.2 ([#67](https://github.com/GlueOps/docs-argocd/issues/67)) ([5bb9649](https://github.com/GlueOps/docs-argocd/commit/5bb964916e03f7f3bd4ddcba75568254b0fde8e7))
+
 ## [0.22.0](https://github.com/GlueOps/docs-argocd/compare/v0.21.0...v0.22.0) (2026-09-11)
 
 
