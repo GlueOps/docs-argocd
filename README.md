@@ -14,7 +14,7 @@ wget -O argocd.yaml https://raw.githubusercontent.com/GlueOps/docs-argocd/main/a
 
 - Read the comments in the file and update the values in the argocd.yaml file.
   - Quick Notes:
-    - Replace `placeholder_tenant_key` with your tenant/company key. Example: `antoniostacos`
+    - Replace `placeholder_tenant_key` with your tenant/company key. Example: `antoniostacos`asdasdasd
     - Replace `placeholder_cluster_environment` with your cluster_environment name. Example: `nonprod`
     - The `placeholder_argocd_oidc_client_secret_from_dex` that you specify needs to be the same one you use in the `platform.yaml` for ArgoCD. If they do not match you will not be able to login.
     - The OTEL observability extension is **always installed** — there is no enable/disable input. It is defined in `argocd.yaml` and loaded by ArgoCD itself, so it applies to every Argo application without changing app templates.
