@@ -185,6 +185,49 @@ configs:
         end
       end
       return hs
+    # Source: GlueOps/platform-gatekeeper examples/argocd-health-check.yaml
+    # @ignored
+    resource.customizations.health.platform.glueops.dev_Gate: |
+      -- Reasons no amount of waiting can clear. See AGENTS.md Decision 15.
+      local stuck = {
+        Terminal = true,
+        PolicyViolation = true,
+        ReadForbidden = true,
+        InvalidSpec = true,
+      }
+      hs = {}
+      if obj.status == nil or obj.status.conditions == nil then
+        hs.status = "Progressing"
+        hs.message = "Awaiting first evaluation"
+        return hs
+      end
+      for i, c in ipairs(obj.status.conditions) do
+        if c.type == "Ready" then
+          -- Prefer the condition's own observedGeneration (metav1 binds it there).
+          local observed = c.observedGeneration or obj.status.observedGeneration
+          local generation = obj.metadata and obj.metadata.generation
+          if generation == nil or observed ~= generation then
+            hs.status = "Progressing"
+            hs.message = "Awaiting evaluation of current spec"
+            return hs
+          end
+          hs.message = (c.reason or "") .. ": " .. (c.message or "")
+          if c.status == "True" then
+            hs.status = "Healthy"
+            return hs
+          end
+          if stuck[c.reason] then
+            hs.status = "Degraded"
+            return hs
+          end
+          -- Unknown included: an unevaluable gate makes no claim either way.
+          hs.status = "Progressing"
+          return hs
+        end
+      end
+      hs.status = "Progressing"
+      hs.message = "No Ready condition"
+      return hs
     # enables health check assessment for lokialertrulegroup. it'll be in a progressing state if it doesn't get created. we may want to add more health checks in the future for error states
     # @ignored
     resource.customizations.health.metacontroller.glueops.dev_LokiAlertRuleGroup:
@@ -347,16 +390,10 @@ extraObjects:
     rules:
       - apiGroups: ["platform.glueops.dev"]
         resources: ["gates"]
-        verbs: ["get"]
+        verbs: ["list"]
       - apiGroups: ["platform.glueops.dev"]
         resources: ["gates/status"]
-        verbs: ["patch", "update"]
-      - apiGroups: ["authentication.k8s.io"]
-        resources: ["tokenreviews"]
-        verbs: ["create"]
-      - apiGroups: ["authorization.k8s.io"]
-        resources: ["subjectaccessreviews"]
-        verbs: ["create"]
+        verbs: ["patch"]
       - apiGroups: ["apps"]
         resources: ["deployments", "statefulsets"]
         verbs: ["get"]
@@ -377,7 +414,10 @@ extraObjects:
         verbs: ["list"]
       - apiGroups: ["argoproj.io"]
         resources: ["applications"]
-        verbs: ["get", "list", "watch"]
+        verbs: ["get"]
+      - apiGroups: ["helm.toolkit.fluxcd.io"]
+        resources: ["helmreleases"]
+        verbs: ["get"]
 
   - apiVersion: rbac.authorization.k8s.io/v1
     kind: ClusterRoleBinding
@@ -408,6 +448,13 @@ extraObjects:
             app.kubernetes.io/name: gatekeeper
         spec:
           serviceAccountName: glueops-core-gatekeeper
+          priorityClassName: system-cluster-critical
+          securityContext:
+            runAsNonRoot: true
+            runAsUser: 65532
+            runAsGroup: 65532
+            seccompProfile:
+              type: RuntimeDefault
           nodeSelector:
             glueops.dev/role: glueops-platform
           tolerations:
@@ -417,8 +464,14 @@ extraObjects:
               effect: "NoSchedule"
           containers:
             - name: gatekeeper
+              # requires gatekeeper >= v2.0.0; earlier builds never write Gate.status
               image: "ghcr.repo.gpkg.io/glueops/platform-gatekeeper:placeholder_gatekeeper_tag"
-              imagePullPolicy: IfNotPresent
+              imagePullPolicy: Always
+              securityContext:
+                allowPrivilegeEscalation: false
+                readOnlyRootFilesystem: true
+                capabilities:
+                  drop: ["ALL"]
               ports:
                 - containerPort: 8080
                   name: http
@@ -430,10 +483,24 @@ extraObjects:
                   value: "glueops-core,placeholder_cluster_environment"
                 - name: GATEKEEPER_PLATFORM_ALLOWED_NAMESPACE_PREFIXES
                   value: "glueops-core-"
+                - name: GATEKEEPER_RECONCILE_INTERVAL
+                  value: "30s"
+                - name: GOMEMLIMIT
+                  value: "100MiB"
+              livenessProbe:
+                httpGet:
+                  path: /healthz
+                  port: http
+                periodSeconds: 10
+              readinessProbe:
+                httpGet:
+                  path: /readyz
+                  port: http
+                periodSeconds: 10
               resources:
                 requests:
-                  cpu: 10m
-                  memory: 32Mi
+                  cpu: 20m
+                  memory: 64Mi
                 limits:
                   cpu: 100m
                   memory: 128Mi
