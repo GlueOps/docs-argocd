@@ -439,11 +439,6 @@ extraObjects:
       namespace: glueops-core-gatekeeper
     spec:
       replicas: 1
-      strategy:
-        type: RollingUpdate
-        rollingUpdate:
-          maxUnavailable: 0
-          maxSurge: 1
       selector:
         matchLabels:
           app.kubernetes.io/name: gatekeeper
@@ -471,7 +466,12 @@ extraObjects:
             - name: gatekeeper
               # requires gatekeeper >= v2.0.0; earlier builds never write Gate.status
               image: "ghcr.repo.gpkg.io/glueops/platform-gatekeeper:placeholder_gatekeeper_tag"
-              imagePullPolicy: IfNotPresent
+              imagePullPolicy: Always
+              securityContext:
+                allowPrivilegeEscalation: false
+                readOnlyRootFilesystem: true
+                capabilities:
+                  drop: ["ALL"]
               ports:
                 - containerPort: 8080
                   name: http
@@ -494,7 +494,7 @@ extraObjects:
                 periodSeconds: 10
               readinessProbe:
                 httpGet:
-                  path: /healthz
+                  path: /readyz
                   port: http
                 periodSeconds: 10
               resources:
