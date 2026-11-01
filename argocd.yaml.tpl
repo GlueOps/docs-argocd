@@ -185,17 +185,10 @@ configs:
         end
       end
       return hs
-    # Argo CD has no built-in health assessment for a Gate, and a resource with no
-    # health check is SKIPPED in the Application health rollup -- the wave task is
-    # marked succeeded immediately and the next wave proceeds ungated. So without
-    # this key, Gates do nothing and there is no warning anywhere.
-    # Source of truth: GlueOps/platform-gatekeeper examples/argocd-health-check.yaml
+    # Source: GlueOps/platform-gatekeeper examples/argocd-health-check.yaml
     # @ignored
     resource.customizations.health.platform.glueops.dev_Gate: |
-      -- Reasons no amount of waiting can clear: each needs someone to change something
-      -- -- the Gate's spec, the namespace's mode label, gatekeeper's ClusterRole or
-      -- allowlist, or the stuck dependency itself. EvaluationFailed and
-      -- DependenciesNotReady are deliberately absent.
+      -- Reasons no amount of waiting can clear. See AGENTS.md Decision 15.
       local stuck = {
         Terminal = true,
         PolicyViolation = true,
@@ -210,9 +203,7 @@ configs:
       end
       for i, c in ipairs(obj.status.conditions) do
         if c.type == "Ready" then
-          -- metav1 binds observedGeneration to the condition it was set from, so the
-          -- condition's own field ties currency to the very condition about to be
-          -- trusted; the status-level one is a fallback for writers that set only that.
+          -- Prefer the condition's own observedGeneration (metav1 binds it there).
           local observed = c.observedGeneration or obj.status.observedGeneration
           local generation = obj.metadata and obj.metadata.generation
           if generation == nil or observed ~= generation then
@@ -225,15 +216,11 @@ configs:
             hs.status = "Healthy"
             return hs
           end
-          -- Degraded fails the operation rather than waiting. It needs selfHeal: true
-          -- to recover afterwards -- see AGENTS.md Decision 15, which records what this
-          -- was measured to do.
           if stuck[c.reason] then
             hs.status = "Degraded"
             return hs
           end
-          -- Everything else, including Unknown, means keep waiting. An unevaluable
-          -- gate makes no claim about the dependency, so Degraded would be wrong.
+          -- Unknown included: an unevaluable gate makes no claim either way.
           hs.status = "Progressing"
           return hs
         end
@@ -400,11 +387,7 @@ extraObjects:
     kind: ClusterRole
     metadata:
       name: glueops-core-gatekeeper
-    # This ClusterRole is the CEILING on what any Gate can observe: a kind granted
-    # here becomes readable by every Gate in the cluster. Add kinds deliberately,
-    # and never grant secrets or configmaps.
     rules:
-      # list, not get: the controller sweeps every Gate in the cluster on a timer.
       - apiGroups: ["platform.glueops.dev"]
         resources: ["gates"]
         verbs: ["list"]
@@ -423,7 +406,6 @@ extraObjects:
       - apiGroups: [""]
         resources: ["pods"]
         verbs: ["list"]
-      # The Gate's namespace carries the customer/platform mode label.
       - apiGroups: [""]
         resources: ["namespaces"]
         verbs: ["get"]
@@ -433,8 +415,6 @@ extraObjects:
       - apiGroups: ["argoproj.io"]
         resources: ["applications"]
         verbs: ["get"]
-      # Needed by the fluxHelmReleaseReady check type, and missing until now: a
-      # Gate using it got ReadForbidden instead of an answer.
       - apiGroups: ["helm.toolkit.fluxcd.io"]
         resources: ["helmreleases"]
         verbs: ["get"]
@@ -459,10 +439,6 @@ extraObjects:
       namespace: glueops-core-gatekeeper
     spec:
       replicas: 1
-      # maxUnavailable: 0 keeps the old pod reconciling until the new one is Ready.
-      # A bad image under Recreate leaves ZERO reconcilers and every Gate goes
-      # stale; two pods briefly writing the same statuses is harmless, because the
-      # writes are idempotent merge patches.
       strategy:
         type: RollingUpdate
         rollingUpdate:
@@ -477,12 +453,9 @@ extraObjects:
             app.kubernetes.io/name: gatekeeper
         spec:
           serviceAccountName: glueops-core-gatekeeper
-          # Eviction is the silent-staleness failure: at priority 0 a single-replica
-          # Burstable pod loses scheduling races during a node drain.
           priorityClassName: system-cluster-critical
           securityContext:
             runAsNonRoot: true
-            # Matches the numeric USER in the distroless:nonroot base image.
             runAsUser: 65532
             runAsGroup: 65532
             seccompProfile:
@@ -496,9 +469,7 @@ extraObjects:
               effect: "NoSchedule"
           containers:
             - name: gatekeeper
-              # MUST be v2.0.0 or later. v1.x is the request-API build: it serves
-              # /check and never writes Gate.status, so with the health check above
-              # installed every gated Application hangs at wave -1.
+              # requires gatekeeper >= v2.0.0; earlier builds never write Gate.status
               image: "ghcr.repo.gpkg.io/glueops/platform-gatekeeper:placeholder_gatekeeper_tag"
               imagePullPolicy: IfNotPresent
               ports:
@@ -514,14 +485,8 @@ extraObjects:
                   value: "glueops-core-"
                 - name: GATEKEEPER_RECONCILE_INTERVAL
                   value: "30s"
-                # Below the 128Mi limit, so growth costs GC cycles rather than an
-                # OOMKill — which for a single-replica controller means stale Gates.
                 - name: GOMEMLIMIT
                   value: "100MiB"
-              # A plain process check on purpose. Tying liveness to sweep success
-              # would turn an apiserver outage into CrashLoopBackOff, and a
-              # restarting pod reconciles less than a wedged one. Staleness is an
-              # alert, not a restart.
               livenessProbe:
                 httpGet:
                   path: /healthz
