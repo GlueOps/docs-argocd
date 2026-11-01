@@ -185,6 +185,62 @@ configs:
         end
       end
       return hs
+    # Argo CD has no built-in health assessment for a Gate, and a resource with no
+    # health check is SKIPPED in the Application health rollup -- the wave task is
+    # marked succeeded immediately and the next wave proceeds ungated. So without
+    # this key, Gates do nothing and there is no warning anywhere.
+    # Source of truth: GlueOps/platform-gatekeeper examples/argocd-health-check.yaml
+    # @ignored
+    resource.customizations.health.platform.glueops.dev_Gate: |
+      -- Reasons no amount of waiting can clear: each needs someone to change something
+      -- -- the Gate's spec, the namespace's mode label, gatekeeper's ClusterRole or
+      -- allowlist, or the stuck dependency itself. EvaluationFailed and
+      -- DependenciesNotReady are deliberately absent.
+      local stuck = {
+        Terminal = true,
+        PolicyViolation = true,
+        ReadForbidden = true,
+        InvalidSpec = true,
+      }
+      hs = {}
+      if obj.status == nil or obj.status.conditions == nil then
+        hs.status = "Progressing"
+        hs.message = "Awaiting first evaluation"
+        return hs
+      end
+      for i, c in ipairs(obj.status.conditions) do
+        if c.type == "Ready" then
+          -- metav1 binds observedGeneration to the condition it was set from, so the
+          -- condition's own field ties currency to the very condition about to be
+          -- trusted; the status-level one is a fallback for writers that set only that.
+          local observed = c.observedGeneration or obj.status.observedGeneration
+          local generation = obj.metadata and obj.metadata.generation
+          if generation == nil or observed ~= generation then
+            hs.status = "Progressing"
+            hs.message = "Awaiting evaluation of current spec"
+            return hs
+          end
+          hs.message = (c.reason or "") .. ": " .. (c.message or "")
+          if c.status == "True" then
+            hs.status = "Healthy"
+            return hs
+          end
+          -- Degraded fails the operation rather than waiting. It needs selfHeal: true
+          -- to recover afterwards -- see AGENTS.md Decision 15, which records what this
+          -- was measured to do.
+          if stuck[c.reason] then
+            hs.status = "Degraded"
+            return hs
+          end
+          -- Everything else, including Unknown, means keep waiting. An unevaluable
+          -- gate makes no claim about the dependency, so Degraded would be wrong.
+          hs.status = "Progressing"
+          return hs
+        end
+      end
+      hs.status = "Progressing"
+      hs.message = "No Ready condition"
+      return hs
     # enables health check assessment for lokialertrulegroup. it'll be in a progressing state if it doesn't get created. we may want to add more health checks in the future for error states
     # @ignored
     resource.customizations.health.metacontroller.glueops.dev_LokiAlertRuleGroup:
@@ -344,19 +400,17 @@ extraObjects:
     kind: ClusterRole
     metadata:
       name: glueops-core-gatekeeper
+    # This ClusterRole is the CEILING on what any Gate can observe: a kind granted
+    # here becomes readable by every Gate in the cluster. Add kinds deliberately,
+    # and never grant secrets or configmaps.
     rules:
+      # list, not get: the controller sweeps every Gate in the cluster on a timer.
       - apiGroups: ["platform.glueops.dev"]
         resources: ["gates"]
-        verbs: ["get"]
+        verbs: ["list"]
       - apiGroups: ["platform.glueops.dev"]
         resources: ["gates/status"]
-        verbs: ["patch", "update"]
-      - apiGroups: ["authentication.k8s.io"]
-        resources: ["tokenreviews"]
-        verbs: ["create"]
-      - apiGroups: ["authorization.k8s.io"]
-        resources: ["subjectaccessreviews"]
-        verbs: ["create"]
+        verbs: ["patch"]
       - apiGroups: ["apps"]
         resources: ["deployments", "statefulsets"]
         verbs: ["get"]
@@ -369,6 +423,7 @@ extraObjects:
       - apiGroups: [""]
         resources: ["pods"]
         verbs: ["list"]
+      # The Gate's namespace carries the customer/platform mode label.
       - apiGroups: [""]
         resources: ["namespaces"]
         verbs: ["get"]
@@ -377,7 +432,12 @@ extraObjects:
         verbs: ["list"]
       - apiGroups: ["argoproj.io"]
         resources: ["applications"]
-        verbs: ["get", "list", "watch"]
+        verbs: ["get"]
+      # Needed by the fluxHelmReleaseReady check type, and missing until now: a
+      # Gate using it got ReadForbidden instead of an answer.
+      - apiGroups: ["helm.toolkit.fluxcd.io"]
+        resources: ["helmreleases"]
+        verbs: ["get"]
 
   - apiVersion: rbac.authorization.k8s.io/v1
     kind: ClusterRoleBinding
@@ -399,6 +459,15 @@ extraObjects:
       namespace: glueops-core-gatekeeper
     spec:
       replicas: 1
+      # maxUnavailable: 0 keeps the old pod reconciling until the new one is Ready.
+      # A bad image under Recreate leaves ZERO reconcilers and every Gate goes
+      # stale; two pods briefly writing the same statuses is harmless, because the
+      # writes are idempotent merge patches.
+      strategy:
+        type: RollingUpdate
+        rollingUpdate:
+          maxUnavailable: 0
+          maxSurge: 1
       selector:
         matchLabels:
           app.kubernetes.io/name: gatekeeper
@@ -408,6 +477,16 @@ extraObjects:
             app.kubernetes.io/name: gatekeeper
         spec:
           serviceAccountName: glueops-core-gatekeeper
+          # Eviction is the silent-staleness failure: at priority 0 a single-replica
+          # Burstable pod loses scheduling races during a node drain.
+          priorityClassName: system-cluster-critical
+          securityContext:
+            runAsNonRoot: true
+            # Matches the numeric USER in the distroless:nonroot base image.
+            runAsUser: 65532
+            runAsGroup: 65532
+            seccompProfile:
+              type: RuntimeDefault
           nodeSelector:
             glueops.dev/role: glueops-platform
           tolerations:
@@ -417,6 +496,9 @@ extraObjects:
               effect: "NoSchedule"
           containers:
             - name: gatekeeper
+              # MUST be v2.0.0 or later. v1.x is the request-API build: it serves
+              # /check and never writes Gate.status, so with the health check above
+              # installed every gated Application hangs at wave -1.
               image: "ghcr.repo.gpkg.io/glueops/platform-gatekeeper:placeholder_gatekeeper_tag"
               imagePullPolicy: IfNotPresent
               ports:
@@ -430,10 +512,30 @@ extraObjects:
                   value: "glueops-core,placeholder_cluster_environment"
                 - name: GATEKEEPER_PLATFORM_ALLOWED_NAMESPACE_PREFIXES
                   value: "glueops-core-"
+                - name: GATEKEEPER_RECONCILE_INTERVAL
+                  value: "30s"
+                # Below the 128Mi limit, so growth costs GC cycles rather than an
+                # OOMKill — which for a single-replica controller means stale Gates.
+                - name: GOMEMLIMIT
+                  value: "100MiB"
+              # A plain process check on purpose. Tying liveness to sweep success
+              # would turn an apiserver outage into CrashLoopBackOff, and a
+              # restarting pod reconciles less than a wedged one. Staleness is an
+              # alert, not a restart.
+              livenessProbe:
+                httpGet:
+                  path: /healthz
+                  port: http
+                periodSeconds: 10
+              readinessProbe:
+                httpGet:
+                  path: /healthz
+                  port: http
+                periodSeconds: 10
               resources:
                 requests:
-                  cpu: 10m
-                  memory: 32Mi
+                  cpu: 20m
+                  memory: 64Mi
                 limits:
                   cpu: 100m
                   memory: 128Mi
